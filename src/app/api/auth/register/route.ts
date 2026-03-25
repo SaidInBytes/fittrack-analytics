@@ -1,36 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import bcrypt from 'bcryptjs'
-import { connectDB } from '@/lib/db'
-import UserModel from '@/models/User'
+import { registerUser } from '@/backend/services/userService'
+import { validateRegistration } from '@/backend/validators'
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password } = await req.json()
+    const body = await req.json()
 
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    const validationError = validateRegistration(body)
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 })
     }
 
-    await connectDB()
-
-    const existingUser = await UserModel.findOne({ email })
-    if (existingUser) {
-      return NextResponse.json({ error: 'User already exists' }, { status: 409 })
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 12)
-
-    const user = await UserModel.create({
-      name,
-      email,
-      password: hashedPassword,
-    })
+    const user = await registerUser(body.name, body.email, body.password)
 
     return NextResponse.json(
       { message: 'User created', userId: user._id },
       { status: 201 }
     )
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'User already exists') {
+      return NextResponse.json({ error: error.message }, { status: 409 })
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
