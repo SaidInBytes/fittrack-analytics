@@ -5,8 +5,25 @@ export function validateWorkout(data: Partial<Workout>): string | null {
   if (!data.type || !['strength', 'cardio', 'flexibility', 'mixed'].includes(data.type)) {
     return 'Valid type is required (strength, cardio, flexibility, mixed)'
   }
-  if (!data.duration || typeof data.duration !== 'number' || data.duration <= 0) {
-    return 'Duration must be a positive number'
+  if (data.type === 'strength') {
+    if (!data.exercises || data.exercises.length === 0) {
+      return 'At least one exercise is required for strength workouts'
+    }
+
+    const invalidExercise = data.exercises.some(
+      (exercise) =>
+        !exercise.exerciseName ||
+        typeof exercise.sets !== 'number' ||
+        exercise.sets <= 0 ||
+        typeof exercise.reps !== 'number' ||
+        exercise.reps <= 0
+    )
+
+    if (invalidExercise) {
+      return 'Each strength exercise must have name, sets and reps'
+    }
+  } else if (typeof data.duration !== 'number' || data.duration <= 0) {
+    return 'Duration must be a positive number for non-strength workouts'
   }
   if (!data.date) return 'Date is required'
   return null

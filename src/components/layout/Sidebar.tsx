@@ -13,11 +13,21 @@ const navItems = [
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean
+  onNavigate?: () => void
+}
+
+export default function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card">
+    <aside
+      className={cn(
+        'fixed inset-y-0 left-0 z-40 w-64 flex-col border-r border-border bg-card transition-transform md:static md:z-auto md:flex md:translate-x-0',
+        mobileOpen ? 'flex translate-x-0' : 'hidden -translate-x-full'
+      )}
+    >
       <div className="p-6">
         <h2 className="text-xl font-bold text-primary">FitTrack</h2>
       </div>
@@ -32,6 +42,7 @@ export default function Sidebar() {
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             )}
+            onClick={onNavigate}
           >
             <item.icon className="h-4 w-4" />
             {item.label}
