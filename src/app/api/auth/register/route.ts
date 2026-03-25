@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
     if (error.message === 'User already exists') {
       return NextResponse.json({ error: error.message }, { status: 409 })
     }
+    console.error('Register error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
