@@ -29,7 +29,7 @@ export default function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps
       )}
     >
       <div className="p-6">
-        <h2 className="text-xl font-bold text-primary">FitTrack</h2>
+        <h2 className="text-xl font-bold text-primary">FitTrack Analytics</h2>
       </div>
       <nav className="flex-1 space-y-1 px-3">
         {navItems.map((item) => (
