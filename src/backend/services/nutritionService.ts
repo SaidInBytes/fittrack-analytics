@@ -1,14 +1,45 @@
 import { connectDB } from '@/backend/config/db'
 import NutritionModel from '@/backend/models/Nutrition'
+import type { Meal, NutritionTotals } from '@/types'
+
+function calculateNutritionTotals(meals: Meal[]): NutritionTotals {
+  return meals.reduce(
+    (totals, meal) => {
+      for (const food of meal.foods) {
+        const servings = Number(food.servings) || 0
+        totals.calories += (Number(food.calories) || 0) * servings
+        totals.protein += (Number(food.protein) || 0) * servings
+        totals.carbs += (Number(food.carbs) || 0) * servings
+        totals.fat += (Number(food.fat) || 0) * servings
+      }
+
+      return totals
+    },
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  )
+}
 
 export async function getNutritionByUser(userId: string, limit = 30) {
   await connectDB()
   return NutritionModel.find({ userId }).sort({ date: -1 }).limit(limit)
 }
 
-export async function createNutrition(userId: string, data: any) {
+export async function createNutrition(
+  userId: string,
+  data: {
+    date: string | Date
+    meals: Meal[]
+    goals?: NutritionTotals
+  }
+) {
   await connectDB()
-  return NutritionModel.create({ ...data, userId })
+  const totals = calculateNutritionTotals(data.meals)
+
+  return NutritionModel.create({
+    ...data,
+    userId,
+    totals,
+  })
 }
 
 export async function getNutritionByDate(userId: string, date: Date) {
@@ -22,5 +53,11 @@ export async function getNutritionByDate(userId: string, date: Date) {
 
 export async function updateNutrition(id: string, userId: string, data: any) {
   await connectDB()
-  return NutritionModel.findOneAndUpdate({ _id: id, userId }, data, { new: true })
+  const updatePayload = { ...data }
+
+  if (Array.isArray(data.meals)) {
+    updatePayload.totals = calculateNutritionTotals(data.meals)
+  }
+
+  return NutritionModel.findOneAndUpdate({ _id: id, userId }, updatePayload, { new: true })
 }

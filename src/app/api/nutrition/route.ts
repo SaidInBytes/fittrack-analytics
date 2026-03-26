@@ -26,6 +26,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validationError }, { status: 400 })
     }
 
+    const hasFoods = body.meals.some(
+      (meal: { foods?: unknown[] }) => Array.isArray(meal.foods) && meal.foods.length > 0
+    )
+
+    if (!hasFoods) {
+      return NextResponse.json({ error: 'At least one meal with foods is required' }, { status: 400 })
+    }
+
     const nutrition = await createNutrition(user!.id, body)
     return NextResponse.json(nutrition, { status: 201 })
   } catch (error) {
