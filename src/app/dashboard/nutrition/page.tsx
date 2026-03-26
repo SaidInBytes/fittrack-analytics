@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { format } from 'date-fns'
@@ -9,27 +9,41 @@ import { Button } from '@/components/ui/Button'
 import type { Meal, Nutrition } from '@/types'
 
 type MealType = Meal['mealType']
+type NutritionInputMode = 'serving' | 'per100g'
 
 interface NutritionFormState {
   date: string
   mealType: MealType
+  inputMode: NutritionInputMode
   foodName: string
   calories: string
   protein: string
   carbs: string
   fat: string
   servings: string
+  grams: string
 }
 
 const initialForm: NutritionFormState = {
   date: new Date().toISOString().slice(0, 10),
   mealType: 'breakfast',
+  inputMode: 'serving',
   foodName: '',
   calories: '',
   protein: '',
   carbs: '',
   fat: '',
   servings: '1',
+  grams: '100',
+}
+
+interface FoodSuggestion {
+  id: number
+  name: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
 }
 
 export default function NutritionPage() {
@@ -39,7 +53,11 @@ export default function NutritionPage() {
   const [form, setForm] = useState<NutritionFormState>(initialForm)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSearchingFoods, setIsSearchingFoods] = useState(false)
+  const [foodSuggestions, setFoodSuggestions] = useState<FoodSuggestion[]>([])
+  const [hasSearchedFoods, setHasSearchedFoods] = useState(false)
   const [error, setError] = useState('')
+  const skipNextFoodSearch = useRef(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -87,6 +105,58 @@ export default function NutritionPage() {
     }
   }, [router, status])
 
+  useEffect(() => {
+    if (skipNextFoodSearch.current) {
+      skipNextFoodSearch.current = false
+      setIsSearchingFoods(false)
+      setHasSearchedFoods(false)
+      return
+    }
+
+    const query = form.foodName.trim()
+
+    if (query.length < 2) {
+      setFoodSuggestions([])
+      setHasSearchedFoods(false)
+      return
+    }
+
+    let cancelled = false
+
+    const timeoutId = window.setTimeout(async () => {
+      setIsSearchingFoods(true)
+
+      try {
+        const res = await fetch(`/api/nutrition/search-food?query=${encodeURIComponent(query)}`)
+
+        if (!res.ok) {
+          throw new Error('Failed to search foods')
+        }
+
+        const data = await res.json()
+
+        if (!cancelled) {
+          setFoodSuggestions(Array.isArray(data) ? data : [])
+          setHasSearchedFoods(true)
+        }
+      } catch {
+        if (!cancelled) {
+          setFoodSuggestions([])
+          setHasSearchedFoods(true)
+        }
+      } finally {
+        if (!cancelled) {
+          setIsSearchingFoods(false)
+        }
+      }
+    }, 300)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
+  }, [form.foodName])
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
@@ -96,23 +166,39 @@ export default function NutritionPage() {
     const carbs = Number(form.carbs)
     const fat = Number(form.fat)
     const servings = Number(form.servings)
+    const grams = Number(form.grams)
 
     if (!form.foodName.trim() || !form.date) {
       setError('Date and food name are required.')
       return
     }
 
-    if (
-      [calories, protein, carbs, fat, servings].some((value) => Number.isNaN(value)) ||
-      calories < 0 ||
-      protein < 0 ||
-      carbs < 0 ||
-      fat < 0 ||
-      servings <= 0
-    ) {
-      setError('Nutrition values must be valid numbers and servings must be greater than 0.')
+    if ([calories, protein, carbs, fat].some((value) => Number.isNaN(value))) {
+      setError('Nutrition values must be valid numbers.')
       return
     }
+
+    if (calories < 0 || protein < 0 || carbs < 0 || fat < 0) {
+      setError('Nutrition values must be zero or greater.')
+      return
+    }
+
+    if (form.inputMode === 'serving' && (Number.isNaN(servings) || servings <= 0)) {
+      setError('Servings must be greater than 0 in per serving mode.')
+      return
+    }
+
+    if (form.inputMode === 'per100g' && (Number.isNaN(grams) || grams <= 0)) {
+      setError('Grams must be greater than 0 in per 100g mode.')
+      return
+    }
+
+    const factor = form.inputMode === 'per100g' ? grams / 100 : 1
+    const normalizedCalories = calories * factor
+    const normalizedProtein = protein * factor
+    const normalizedCarbs = carbs * factor
+    const normalizedFat = fat * factor
+    const normalizedServings = form.inputMode === 'per100g' ? 1 : servings
 
     setIsSubmitting(true)
 
@@ -128,11 +214,11 @@ export default function NutritionPage() {
               foods: [
                 {
                   name: form.foodName.trim(),
-                  calories,
-                  protein,
-                  carbs,
-                  fat,
-                  servings,
+                  calories: normalizedCalories,
+                  protein: normalizedProtein,
+                  carbs: normalizedCarbs,
+                  fat: normalizedFat,
+                  servings: normalizedServings,
                 },
               ],
             },
@@ -192,6 +278,16 @@ export default function NutritionPage() {
               <option value="dinner">Dinner</option>
               <option value="snack">Snack</option>
             </select>
+            <select
+              value={form.inputMode}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, inputMode: e.target.value as NutritionInputMode }))
+              }
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="serving">Per serving</option>
+              <option value="per100g">Per 100g</option>
+            </select>
             <input
               type="text"
               placeholder="Food name"
@@ -200,11 +296,57 @@ export default function NutritionPage() {
               className="rounded-md border border-input bg-background px-3 py-2 text-sm"
               required
             />
+
+            {form.foodName.trim().length >= 2 && !isSearchingFoods && foodSuggestions.length > 0 && (
+              <div className="md:col-span-4 max-h-48 overflow-y-auto rounded-md border border-border bg-background p-1">
+                {foodSuggestions.map((food) => (
+                  <button
+                    key={food.id}
+                    type="button"
+                    onClick={() => {
+                      skipNextFoodSearch.current = true
+                      setForm((prev) => ({
+                        ...prev,
+                        foodName: food.name,
+                        inputMode: 'per100g',
+                        calories: String(Math.round(food.calories)),
+                        protein: String(food.protein),
+                        carbs: String(food.carbs),
+                        fat: String(food.fat),
+                        grams: '100',
+                      }))
+                      setFoodSuggestions([])
+                      setHasSearchedFoods(false)
+                    }}
+                    className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-accent"
+                  >
+                    <p className="font-medium">{food.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {Math.round(food.calories)} kcal • P {food.protein}g • C {food.carbs}g • F {food.fat}g
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {isSearchingFoods && (
+              <p className="md:col-span-4 text-xs text-muted-foreground">Searching foods from API...</p>
+            )}
+
+            {!isSearchingFoods &&
+              hasSearchedFoods &&
+              form.foodName.trim().length >= 2 &&
+              foodSuggestions.length === 0 && (
+                <p className="md:col-span-4 text-xs text-muted-foreground">
+                  No foods found from API for this search.
+                </p>
+              )}
+
             <input
               type="number"
               min="0"
               step="1"
-              placeholder="Calories"
+              placeholder={form.inputMode === 'per100g' ? 'Calories (per 100g)' : 'Calories (per serving)'}
               value={form.calories}
               onChange={(e) => setForm((prev) => ({ ...prev, calories: e.target.value }))}
               className="rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -214,7 +356,9 @@ export default function NutritionPage() {
               type="number"
               min="0"
               step="0.1"
-              placeholder="Protein (g)"
+              placeholder={
+                form.inputMode === 'per100g' ? 'Protein (g per 100g)' : 'Protein (g per serving)'
+              }
               value={form.protein}
               onChange={(e) => setForm((prev) => ({ ...prev, protein: e.target.value }))}
               className="rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -224,7 +368,7 @@ export default function NutritionPage() {
               type="number"
               min="0"
               step="0.1"
-              placeholder="Carbs (g)"
+              placeholder={form.inputMode === 'per100g' ? 'Carbs (g per 100g)' : 'Carbs (g per serving)'}
               value={form.carbs}
               onChange={(e) => setForm((prev) => ({ ...prev, carbs: e.target.value }))}
               className="rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -234,22 +378,37 @@ export default function NutritionPage() {
               type="number"
               min="0"
               step="0.1"
-              placeholder="Fat (g)"
+              placeholder={form.inputMode === 'per100g' ? 'Fat (g per 100g)' : 'Fat (g per serving)'}
               value={form.fat}
               onChange={(e) => setForm((prev) => ({ ...prev, fat: e.target.value }))}
               className="rounded-md border border-input bg-background px-3 py-2 text-sm"
               required
             />
-            <input
-              type="number"
-              min="0.1"
-              step="0.1"
-              placeholder="Servings"
-              value={form.servings}
-              onChange={(e) => setForm((prev) => ({ ...prev, servings: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-              required
-            />
+
+            {form.inputMode === 'serving' ? (
+              <input
+                type="number"
+                min="0.1"
+                step="0.1"
+                placeholder="Servings"
+                value={form.servings}
+                onChange={(e) => setForm((prev) => ({ ...prev, servings: e.target.value }))}
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                required
+              />
+            ) : (
+              <input
+                type="number"
+                min="1"
+                step="1"
+                placeholder="Amount (g)"
+                value={form.grams}
+                onChange={(e) => setForm((prev) => ({ ...prev, grams: e.target.value }))}
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                required
+              />
+            )}
+
             <div className="md:col-span-4">
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Saving...' : 'Save Nutrition Entry'}
