@@ -1,15 +1,13 @@
-interface WgerExerciseItem {
-  id: number
-  name: string
-  description?: string
-  category?: number
+interface WgerSearchItem {
+  value: string
+  data?: {
+    id?: number
+    name?: string
+  }
 }
 
-interface WgerExerciseResponse {
-  count: number
-  next: string | null
-  previous: string | null
-  results: WgerExerciseItem[]
+interface WgerSearchResponse {
+  suggestions: WgerSearchItem[]
 }
 
 export interface ExerciseSuggestion {
@@ -26,11 +24,7 @@ export async function searchWgerExercises(query: string, limit = 10): Promise<Ex
     return []
   }
 
-  const params = new URLSearchParams({
-    language: '2',
-    limit: String(limit),
-    name: normalizedQuery,
-  })
+  const params = new URLSearchParams({ term: normalizedQuery })
 
   const headers: HeadersInit = {
     Accept: 'application/json',
@@ -40,7 +34,7 @@ export async function searchWgerExercises(query: string, limit = 10): Promise<Ex
     headers.Authorization = `Token ${process.env.WGER_API_KEY}`
   }
 
-  const response = await fetch(`${WGER_BASE_URL}/exercise/?${params.toString()}`, {
+  const response = await fetch(`${WGER_BASE_URL}/exercise/search/?${params.toString()}`, {
     headers,
     next: { revalidate: 3600 },
   })
@@ -49,12 +43,17 @@ export async function searchWgerExercises(query: string, limit = 10): Promise<Ex
     throw new Error(`wger request failed: ${response.status}`)
   }
 
-  const payload = (await response.json()) as WgerExerciseResponse
+  const payload = (await response.json()) as WgerSearchResponse
 
-  return payload.results
-    .filter((item) => typeof item.name === 'string' && item.name.trim().length > 0)
-    .map((item) => ({
-      id: item.id,
-      name: item.name.trim(),
-    }))
+  return payload.suggestions
+    .map((item, index) => {
+      const name = item.data?.name || item.value || ''
+      const id = item.data?.id ?? index
+      return {
+        id,
+        name: name.trim(),
+      }
+    })
+    .filter((item) => item.name.length > 0)
+    .slice(0, limit)
 }

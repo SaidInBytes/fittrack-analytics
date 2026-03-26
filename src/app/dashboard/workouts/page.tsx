@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { format } from 'date-fns'
@@ -41,7 +41,9 @@ export default function WorkoutsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSearchingExercises, setIsSearchingExercises] = useState(false)
   const [exerciseSuggestions, setExerciseSuggestions] = useState<Array<{ id: number; name: string }>>([])
+  const [hasSearchedExercises, setHasSearchedExercises] = useState(false)
   const [error, setError] = useState('')
+  const skipNextExerciseSearch = useRef(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -91,6 +93,14 @@ export default function WorkoutsPage() {
   useEffect(() => {
     if (form.type !== 'strength') {
       setExerciseSuggestions([])
+      setHasSearchedExercises(false)
+      return
+    }
+
+    if (skipNextExerciseSearch.current) {
+      skipNextExerciseSearch.current = false
+      setIsSearchingExercises(false)
+      setHasSearchedExercises(false)
       return
     }
 
@@ -98,6 +108,7 @@ export default function WorkoutsPage() {
 
     if (query.length < 2) {
       setExerciseSuggestions([])
+      setHasSearchedExercises(false)
       return
     }
 
@@ -117,10 +128,12 @@ export default function WorkoutsPage() {
 
         if (!cancelled) {
           setExerciseSuggestions(Array.isArray(data) ? data : [])
+          setHasSearchedExercises(true)
         }
       } catch {
         if (!cancelled) {
           setExerciseSuggestions([])
+          setHasSearchedExercises(true)
         }
       } finally {
         if (!cancelled) {
@@ -247,18 +260,43 @@ export default function WorkoutsPage() {
                   placeholder="Exercise name"
                   value={form.exerciseName}
                   onChange={(e) => setForm((prev) => ({ ...prev, exerciseName: e.target.value }))}
-                  list="exercise-suggestions"
                   className="rounded-md border border-input bg-background px-3 py-2 text-sm"
                   required
                 />
-                <datalist id="exercise-suggestions">
-                  {exerciseSuggestions.map((exercise) => (
-                    <option key={exercise.id} value={exercise.name} />
-                  ))}
-                </datalist>
+
+                {form.exerciseName.trim().length >= 2 && !isSearchingExercises && exerciseSuggestions.length > 0 && (
+                  <div className="md:col-span-4 max-h-48 overflow-y-auto rounded-md border border-border bg-background p-1">
+                    {exerciseSuggestions.map((exercise) => (
+                      <button
+                        key={exercise.id}
+                        type="button"
+                        onClick={() => {
+                          skipNextExerciseSearch.current = true
+                          setForm((prev) => ({ ...prev, exerciseName: exercise.name }))
+                          setExerciseSuggestions([])
+                          setHasSearchedExercises(false)
+                        }}
+                        className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-accent"
+                      >
+                        {exercise.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {isSearchingExercises && (
                   <p className="md:col-span-4 text-xs text-muted-foreground">Searching wger exercises...</p>
                 )}
+
+                {!isSearchingExercises &&
+                  hasSearchedExercises &&
+                  form.exerciseName.trim().length >= 2 &&
+                  exerciseSuggestions.length === 0 && (
+                    <p className="md:col-span-4 text-xs text-muted-foreground">
+                      No exercises found from API for this search.
+                    </p>
+                  )}
+
                 <input
                   type="number"
                   min="1"
