@@ -63,7 +63,10 @@ Create a `.env.local` file in the root:
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/fittrack?retryWrites=true&w=majority
 NEXTAUTH_SECRET=your-secret-here
 NEXTAUTH_URL=http://localhost:3000
+WGER_API_KEY=your-wger-api-key
 ```
+
+`WGER_API_KEY` is optional, but recommended if you want exercise autocomplete suggestions from the wger API in the workouts page.
 
 ### Run
 

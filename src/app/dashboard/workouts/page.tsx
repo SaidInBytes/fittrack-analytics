@@ -39,6 +39,8 @@ export default function WorkoutsPage() {
   const [form, setForm] = useState<WorkoutFormState>(initialForm)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSearchingExercises, setIsSearchingExercises] = useState(false)
+  const [exerciseSuggestions, setExerciseSuggestions] = useState<Array<{ id: number; name: string }>>([])
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -85,6 +87,53 @@ export default function WorkoutsPage() {
       cancelled = true
     }
   }, [router, status])
+
+  useEffect(() => {
+    if (form.type !== 'strength') {
+      setExerciseSuggestions([])
+      return
+    }
+
+    const query = form.exerciseName.trim()
+
+    if (query.length < 2) {
+      setExerciseSuggestions([])
+      return
+    }
+
+    let cancelled = false
+
+    const timeoutId = window.setTimeout(async () => {
+      setIsSearchingExercises(true)
+
+      try {
+        const res = await fetch(`/api/exercises/search?query=${encodeURIComponent(query)}`)
+
+        if (!res.ok) {
+          throw new Error('Failed to search exercises')
+        }
+
+        const data = await res.json()
+
+        if (!cancelled) {
+          setExerciseSuggestions(Array.isArray(data) ? data : [])
+        }
+      } catch {
+        if (!cancelled) {
+          setExerciseSuggestions([])
+        }
+      } finally {
+        if (!cancelled) {
+          setIsSearchingExercises(false)
+        }
+      }
+    }, 300)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
+  }, [form.exerciseName, form.type])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -198,9 +247,18 @@ export default function WorkoutsPage() {
                   placeholder="Exercise name"
                   value={form.exerciseName}
                   onChange={(e) => setForm((prev) => ({ ...prev, exerciseName: e.target.value }))}
+                  list="exercise-suggestions"
                   className="rounded-md border border-input bg-background px-3 py-2 text-sm"
                   required
                 />
+                <datalist id="exercise-suggestions">
+                  {exerciseSuggestions.map((exercise) => (
+                    <option key={exercise.id} value={exercise.name} />
+                  ))}
+                </datalist>
+                {isSearchingExercises && (
+                  <p className="md:col-span-4 text-xs text-muted-foreground">Searching wger exercises...</p>
+                )}
                 <input
                   type="number"
                   min="1"
