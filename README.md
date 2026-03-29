@@ -1,56 +1,56 @@
-# 💪 FitTrack Analytics
+# FitTrack Analytics
 
-A fitness tracking application built with Next.js 14, TypeScript, MongoDB, and Tailwind CSS. Track workouts, nutrition, and body progress with detailed analytics.
+FitTrack Analytics is a full-stack fitness tracker built with Next.js 14, TypeScript, MongoDB, and Tailwind CSS.
 
-## Features
+It includes authentication, workout and template management, nutrition and progress tracking, analytics charts, and a workout planner powered by wger data.
 
-- Authentication with NextAuth credentials login
-- Workout logging with strength and cardio-style entries
-- Nutrition logging with automatic calorie and macro totals
-- Progress tracking for weight and body measurements
-- Settings page for profile details and app preferences
-- Dark mode synced from saved user preferences
-- Exercise autocomplete powered by the wger API
-- Dashboard summaries and charts for workouts and progress
+## Highlights
+
+- Credential authentication with NextAuth
+- Branded landing, login, and register pages with animated auth background
+- Workout logging with exercise entries
+- Recurring workout templates (create, list, delete, and log-as-workout)
+- Workout planner flow (Push, Pull, Legs, Cardio, Stretch + duration selector)
+- wger exercise search autocomplete and exercise image/video source integration
+- Nutrition tracking with automatic macro totals
+- Progress tracking for weight and measurements
+- Dashboard summaries and charts
+- User settings for profile and preferences
+- Unit tests with Vitest and CI workflow for lint, test, and build
 
 ## Tech Stack
 
-- **Frontend:** Next.js 14 (App Router), React 18, Tailwind CSS, Zustand
-- **Backend:** Next.js API Routes, Mongoose, NextAuth.js
-- **Database:** MongoDB (Atlas)
-- **Charts:** Recharts
-- **Icons:** Lucide React
+- Frontend: Next.js 14 (App Router), React 18, Tailwind CSS, Zustand
+- Backend: Next.js Route Handlers, NextAuth, Mongoose
+- Database: MongoDB
+- Testing: Vitest
+- Charts: Recharts
+- Icons: Lucide React
 
 ## Project Structure
 
-```
+```text
 src/
-├── app/                        # Next.js App Router
-│   ├── (auth)/                 # Login & Register pages
-│   ├── api/                    # REST API endpoints
-│   │   ├── auth/               # NextAuth + registration
-│   │   ├── exercises/          # Exercise search proxy (wger)
-│   │   ├── user/               # User settings/profile API
-│   │   ├── workouts/           # Workout CRUD
-│   │   ├── nutrition/          # Nutrition CRUD
-│   │   └── progress/           # Progress CRUD
-│   └── dashboard/              # Dashboard pages
-│       ├── workouts/
-│       ├── nutrition/
-│       ├── progress/
-│       └── settings/
-├── backend/                    # Server-side logic
-│   ├── config/                 # DB connection & auth config
-│   ├── middleware/             # Auth middleware
-│   ├── models/                 # Mongoose models
-│   ├── services/               # Business logic
-│   └── validators/             # Input validation
-├── components/                 # React components
-│   ├── layout/                 # Sidebar, Header
-│   └── ui/                     # Button, Card
-├── lib/                        # Utilities (cn helper)
-├── store/                      # Zustand state management
-└── types/                      # TypeScript interfaces
+	app/
+		(auth)/
+		api/
+			auth/
+			exercises/
+			nutrition/
+			progress/
+			user/
+			workouts/
+		dashboard/
+	backend/
+		config/
+		middleware/
+		models/
+		services/
+		validators/
+	components/
+	lib/
+	store/
+	types/
 ```
 
 ## Getting Started
@@ -58,9 +58,9 @@ src/
 ### Prerequisites
 
 - Node.js 18+
-- MongoDB Atlas account (or local MongoDB)
+- MongoDB (Atlas or local)
 
-### Installation
+### Install
 
 ```bash
 git clone https://github.com/SaidInBytes/fittrack-analytics.git
@@ -70,109 +70,127 @@ npm install
 
 ### Environment Variables
 
-Create a `.env.local` file in the root:
+Create a `.env.local` file in the project root:
 
 ```env
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/fittrack?retryWrites=true&w=majority
-NEXTAUTH_SECRET=your-secret-here
+MONGODB_URI=mongodb://localhost:27017/fittrack
+NEXTAUTH_SECRET=your-super-secret-key-change-this-in-production
 NEXTAUTH_URL=http://localhost:3000
 WGER_API_KEY=your-wger-api-key
 ```
 
-`WGER_API_KEY` is optional, but recommended if you want exercise autocomplete suggestions from the wger API in the workouts page.
+Notes:
 
-If you add or change values in `.env.local` while the dev server is already running, restart `npm run dev` so Next.js reloads the environment.
+- `WGER_API_KEY` is optional.
+- Restart `npm run dev` after changing environment variables.
 
-### Run
+### Run Locally
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Then open `http://localhost:3000`.
 
-## Current App Areas
+## Available Scripts
 
-- **Dashboard:** Overview cards plus workout and weight trend charts
-- **Workouts:** Create and review workouts, with wger-backed exercise suggestions for strength entries
-- **Nutrition:** Log meals and automatically calculate total calories, protein, carbs, and fat
-- **Progress:** Track weight and measurements over time with a trend chart
-- **Settings:** Update profile data, unit preference, and dark mode preference
+- `npm run dev` - start development server
+- `npm run build` - production build
+- `npm run start` - run production server
+- `npm run lint` - lint project
+- `npm test` - run unit tests
+- `npm run test:watch` - run tests in watch mode
 
 ## Screenshots
 
-Add screenshots or short GIFs here once the UI is finalized.
+### Dashboard
 
-- Dashboard overview
-- Workout creation flow
-- Nutrition logging flow
-- Progress trend chart
-- Settings with dark mode enabled
+![Dashboard](docs/images/dashbord.png)
+
+### Workout Planner
+
+![Workout Planner](docs/images/planworkout.png)
+
+### Workouts
+
+![Workouts](docs/images/workouts.png)
+
+### Login
+
+![Login](docs/images/login.png)
+
+### Register
+
+![Register](docs/images/Register.png)
+
+### Nutrition
+
+![Nutrition](docs/images/nutrition.png)
+
+### Progress
+
+![Progress](docs/images/progress.png)
 
 ## API Endpoints
 
 | Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
+| --- | --- | --- | --- |
 | POST | `/api/auth/register` | Register a new user | No |
-| POST | `/api/auth/[...nextauth]` | Login with NextAuth credentials | No |
-| GET | `/api/workouts` | List workouts for the current user | Yes |
-| POST | `/api/workouts` | Create a workout entry | Yes |
-| GET | `/api/nutrition` | List nutrition logs for the current user | Yes |
-| POST | `/api/nutrition` | Create a nutrition log with computed totals | Yes |
-| GET | `/api/progress` | List progress entries for the current user | Yes |
-| POST | `/api/progress` | Create a progress entry | Yes |
-| GET | `/api/user` | Fetch profile and settings data | Yes |
+| POST | `/api/auth/[...nextauth]` | Sign in with credentials | No |
+| GET | `/api/workouts` | Get current user workouts | Yes |
+| POST | `/api/workouts` | Create a workout | Yes |
+| PUT | `/api/workouts` | Update a workout | Yes |
+| DELETE | `/api/workouts` | Delete a workout | Yes |
+| GET | `/api/workouts/templates` | List saved workout templates | Yes |
+| POST | `/api/workouts/templates` | Create workout template | Yes |
+| DELETE | `/api/workouts/templates/[id]` | Delete template by id | Yes |
+| POST | `/api/workouts/templates/[id]` | Log template as workout | Yes |
+| GET | `/api/exercises/search?query=...` | Search wger exercises | Yes |
+| GET | `/api/exercises/plan?type=push&duration=60` | Generate planned exercises | Yes |
+| GET | `/api/nutrition` | Get nutrition logs | Yes |
+| POST | `/api/nutrition` | Create nutrition log | Yes |
+| GET | `/api/progress` | Get progress entries | Yes |
+| POST | `/api/progress` | Create progress entry | Yes |
+| GET | `/api/user` | Get profile and preferences | Yes |
 | PUT | `/api/user` | Update profile and preferences | Yes |
-| GET | `/api/exercises/search?query=...` | Search exercise suggestions via wger | Yes |
 
-## Notes
+## Branding and Logo
 
-- The exercise search integration uses the public wger API and optionally authenticates with `WGER_API_KEY`.
-- The app stores user preferences, including dark mode and units, in MongoDB.
-- `npm run lint` is configured for this project through Next.js ESLint.
+The UI expects a logo file at:
+
+- `public/logo.png`
+
+Used in:
+
+- landing page
+- login/register pages
+- dashboard header/sidebar
+- app metadata icons
+
+If the file is missing on auth pages, a fallback icon is shown.
+
+## Quality and CI
+
+- Unit tests are implemented with Vitest
+- GitHub Actions workflow runs:
+	- lint
+	- test
+	- build
+
+Workflow file:
+
+- `.github/workflows/ci.yml`
 
 ## Deployment
 
-This app can be deployed to platforms that support Next.js 14 applications, such as Vercel.
+Deploy on any platform that supports Next.js 14 (for example Vercel).
 
-### Required environment variables
-
-Set these in your deployment provider:
+Required environment variables in production:
 
 - `MONGODB_URI`
 - `NEXTAUTH_SECRET`
 - `NEXTAUTH_URL`
 - `WGER_API_KEY` (optional)
-
-### Production notes
-
-- Use a production MongoDB database, not a local development instance.
-- Set `NEXTAUTH_URL` to your deployed app URL.
-- Generate a strong `NEXTAUTH_SECRET` for production.
-- Restart or redeploy the app after changing environment variables.
-
-## Development Workflow
-
-### Typical local workflow
-
-1. Clone the repository.
-2. Install dependencies with `npm install`.
-3. Create `.env.local` from the documented environment variables.
-4. Start the dev server with `npm run dev`.
-5. Run lint checks with `npm run lint` before opening a pull request.
-
-### Branching
-
-- Create a feature branch from `main`.
-- Keep changes scoped to one feature or bugfix when possible.
-- Update the README when API surface or setup steps change.
-
-### Pull requests
-
-- Summarize the feature or fix clearly.
-- Mention any new environment variables.
-- Include screenshots or GIFs for UI changes when relevant.
-- Confirm local lint checks pass before requesting review.
 
 ## License
 
