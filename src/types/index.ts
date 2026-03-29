@@ -26,6 +26,15 @@ export interface Exercise {
   notes?: string
 }
 
+export type Weekday =
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday'
+
 export interface Workout {
   _id: string
   userId: string
@@ -34,6 +43,8 @@ export interface Workout {
   type: 'strength' | 'cardio' | 'flexibility' | 'mixed'
   duration: number
   exercises: Exercise[]
+  isTemplate?: boolean
+  scheduleDays?: Weekday[]
   notes?: string
   createdAt: Date
 }

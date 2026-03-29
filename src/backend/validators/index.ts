@@ -29,6 +29,46 @@ export function validateWorkout(data: Partial<Workout>): string | null {
   return null
 }
 
+export function validateWorkoutTemplate(data: Partial<Workout>): string | null {
+  if (!data.name || typeof data.name !== 'string') return 'Name is required'
+  if (!data.type || !['strength', 'cardio', 'flexibility', 'mixed'].includes(data.type)) {
+    return 'Valid type is required (strength, cardio, flexibility, mixed)'
+  }
+
+  if (!Array.isArray(data.scheduleDays) || data.scheduleDays.length === 0) {
+    return 'At least one schedule day is required'
+  }
+
+  const validDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+  const hasInvalidDay = data.scheduleDays.some((day) => !validDays.includes(day))
+  if (hasInvalidDay) {
+    return 'Schedule days must be valid weekdays'
+  }
+
+  if (data.type === 'strength') {
+    if (!data.exercises || data.exercises.length === 0) {
+      return 'At least one exercise is required for strength workouts'
+    }
+
+    const invalidExercise = data.exercises.some(
+      (exercise) =>
+        !exercise.exerciseName ||
+        typeof exercise.sets !== 'number' ||
+        exercise.sets <= 0 ||
+        typeof exercise.reps !== 'number' ||
+        exercise.reps <= 0
+    )
+
+    if (invalidExercise) {
+      return 'Each strength exercise must have name, sets and reps'
+    }
+  } else if (typeof data.duration !== 'number' || data.duration <= 0) {
+    return 'Duration must be a positive number for non-strength workouts'
+  }
+
+  return null
+}
+
 export function validateNutrition(data: Partial<Nutrition>): string | null {
   if (!data.date) return 'Date is required'
   if (!data.meals || !Array.isArray(data.meals)) return 'Meals must be an array'
