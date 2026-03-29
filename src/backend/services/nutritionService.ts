@@ -2,6 +2,12 @@ import { connectDB } from '@/backend/config/db'
 import NutritionModel from '@/backend/models/Nutrition'
 import type { Meal, NutritionTotals } from '@/types'
 
+type UpdateNutritionInput = {
+  date?: string | Date
+  meals?: Meal[]
+  goals?: NutritionTotals
+}
+
 function calculateNutritionTotals(meals: Meal[]): NutritionTotals {
   return meals.reduce(
     (totals, meal) => {
@@ -51,9 +57,9 @@ export async function getNutritionByDate(userId: string, date: Date) {
   return NutritionModel.findOne({ userId, date: { $gte: start, $lte: end } })
 }
 
-export async function updateNutrition(id: string, userId: string, data: any) {
+export async function updateNutrition(id: string, userId: string, data: UpdateNutritionInput) {
   await connectDB()
-  const updatePayload = { ...data }
+  const updatePayload: UpdateNutritionInput & { totals?: NutritionTotals } = { ...data }
 
   if (Array.isArray(data.meals)) {
     updatePayload.totals = calculateNutritionTotals(data.meals)
