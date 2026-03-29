@@ -57,3 +57,35 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes floatY {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-18px);
+  }
+}
+
+@keyframes drift {
+  0% {
+    transform: translateX(0px) translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateX(12px) translateY(-10px) scale(1.04);
+  }
+  100% {
+    transform: translateX(0px) translateY(0px) scale(1);
+  }
+}
+
+@layer utilities {
+  .animate-float-slow {
+    animation: floatY 8s ease-in-out infinite;
+  }
+
+  .animate-drift-slow {
+    animation: drift 12s ease-in-out infinite;
+  }
+}

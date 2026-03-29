@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -30,7 +31,17 @@ export default function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps
       )}
     >
       <div className="p-6">
-        <h2 className="text-xl font-bold text-primary">FitTrack Analytics</h2>
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <Image
+            src="/logo.png"
+            alt="FitTrack Analytics logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-md"
+            priority
+          />
+          <h2 className="text-xl font-bold text-primary">FitTrack Analytics</h2>
+        </Link>
       </div>
       <nav className="flex-1 space-y-1 px-3">
         {navItems.map((item) => (
