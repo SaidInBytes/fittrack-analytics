@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { searchWgerExercises } from '@/backend/services/wgerService'
 
+// Returns exercise autocomplete suggestions from wger for authenticated users.
 export async function GET(req: NextRequest) {
   try {
     const { error } = await getAuthenticatedUser()

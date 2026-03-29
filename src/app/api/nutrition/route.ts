@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { getNutritionByUser, createNutrition } from '@/backend/services/nutritionService'
 import { validateNutrition } from '@/backend/validators'
 
+// Returns nutrition entries for the authenticated user.
 export async function GET() {
   try {
     const { user, error } = await getAuthenticatedUser()
@@ -15,6 +16,7 @@ export async function GET() {
   }
 }
 
+// Validates and creates a nutrition entry for the authenticated user.
 export async function POST(req: NextRequest) {
   try {
     const { user, error } = await getAuthenticatedUser()

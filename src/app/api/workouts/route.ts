@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { getWorkoutsByUser, createWorkout } from '@/backend/services/workoutService'
 import { validateWorkout } from '@/backend/validators'
 
+// Returns workout history for the authenticated user.
 export async function GET() {
   try {
     const { user, error } = await getAuthenticatedUser()
@@ -15,6 +16,7 @@ export async function GET() {
   }
 }
 
+// Validates and creates a new workout for the authenticated user.
 export async function POST(req: NextRequest) {
   try {
     const { user, error } = await getAuthenticatedUser()

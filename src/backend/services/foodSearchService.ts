@@ -20,6 +20,7 @@ export interface FoodSuggestion {
   fat: number
 }
 
+// Searches food ingredients from wger and maps them to app-friendly nutrition values.
 export async function searchFoods(query: string, limit = 8): Promise<FoodSuggestion[]> {
   const normalizedQuery = query.trim()
 

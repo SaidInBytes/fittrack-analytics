@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { getProgressByUser, createProgress } from '@/backend/services/progressService'
 import { validateProgress } from '@/backend/validators'
 
+// Returns progress history for the authenticated user.
 export async function GET() {
   try {
     const { user, error } = await getAuthenticatedUser()
@@ -15,6 +16,7 @@ export async function GET() {
   }
 }
 
+// Validates and creates a progress entry for the authenticated user.
 export async function POST(req: NextRequest) {
   try {
     const { user, error } = await getAuthenticatedUser()

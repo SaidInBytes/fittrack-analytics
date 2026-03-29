@@ -8,6 +8,7 @@ type UpdateNutritionInput = {
   goals?: NutritionTotals
 }
 
+// Aggregates macro totals across all foods in all meals.
 function calculateNutritionTotals(meals: Meal[]): NutritionTotals {
   return meals.reduce(
     (totals, meal) => {
@@ -25,11 +26,13 @@ function calculateNutritionTotals(meals: Meal[]): NutritionTotals {
   )
 }
 
+// Fetches recent nutrition logs for a user.
 export async function getNutritionByUser(userId: string, limit = 30) {
   await connectDB()
   return NutritionModel.find({ userId }).sort({ date: -1 }).limit(limit)
 }
 
+// Creates a nutrition log and computes totals from the provided meals.
 export async function createNutrition(
   userId: string,
   data: {
@@ -48,6 +51,7 @@ export async function createNutrition(
   })
 }
 
+// Fetches a user's nutrition entry for a specific calendar date.
 export async function getNutritionByDate(userId: string, date: Date) {
   await connectDB()
   const start = new Date(date)
@@ -57,6 +61,7 @@ export async function getNutritionByDate(userId: string, date: Date) {
   return NutritionModel.findOne({ userId, date: { $gte: start, $lte: end } })
 }
 
+// Updates nutrition data and recalculates totals when meals are changed.
 export async function updateNutrition(id: string, userId: string, data: UpdateNutritionInput) {
   await connectDB()
   const updatePayload: UpdateNutritionInput & { totals?: NutritionTotals } = { ...data }
