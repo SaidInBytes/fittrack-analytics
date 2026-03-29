@@ -13,7 +13,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { Activity, Apple, Clock3, Weight } from 'lucide-react'
+import Link from 'next/link'
+import { Activity, Apple, CalendarRange, Clock3, Weight } from 'lucide-react'
 import type { Nutrition, Progress, Workout } from '@/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 
@@ -145,6 +146,22 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">Overview of your recent fitness activity.</p>
       </div>
+
+      {/* Plan workout CTA */}
+      <Link href="/dashboard/plan" className="block">
+        <div className="flex items-center justify-between rounded-xl border-2 border-primary/40 bg-primary/5 px-6 py-4 transition-colors hover:bg-primary/10">
+          <div className="flex items-center gap-4">
+            <CalendarRange className="h-8 w-8 text-primary" />
+            <div>
+              <p className="font-semibold text-primary">Plan today&apos;s workout</p>
+              <p className="text-sm text-muted-foreground">
+                Choose Push, Pull, Leg Day, Cardio or Stretch — then pick your duration.
+              </p>
+            </div>
+          </div>
+          <Activity className="h-5 w-5 text-primary" />
+        </div>
+      </Link>
 
       {error && (
         <Card className="border-destructive/30 bg-destructive/10">
