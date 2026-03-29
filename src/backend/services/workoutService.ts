@@ -26,6 +26,27 @@ export async function createWorkoutTemplate(userId: string, data: any) {
   })
 }
 
+export async function deleteWorkoutTemplate(id: string, userId: string) {
+  await connectDB()
+  return WorkoutModel.findOneAndDelete({ _id: id, userId, isTemplate: true })
+}
+
+export async function logTemplateAsWorkout(id: string, userId: string) {
+  await connectDB()
+  const template = await WorkoutModel.findOne({ _id: id, userId, isTemplate: true })
+  if (!template) return null
+  return WorkoutModel.create({
+    userId,
+    name: template.name,
+    type: template.type,
+    duration: template.duration,
+    exercises: template.exercises,
+    notes: template.notes,
+    date: new Date(),
+    isTemplate: false,
+  })
+}
+
 export async function getWorkoutById(id: string, userId: string) {
   await connectDB()
   return WorkoutModel.findOne({ _id: id, userId })

@@ -77,6 +77,7 @@ export default function WorkoutsPage() {
   const [exerciseSuggestions, setExerciseSuggestions] = useState<Array<{ id: number; name: string }>>([])
   const [hasSearchedExercises, setHasSearchedExercises] = useState(false)
   const [isTemplateSubmitting, setIsTemplateSubmitting] = useState(false)
+  const [templateActionId, setTemplateActionId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const skipNextExerciseSearch = useRef(false)
 
@@ -337,6 +338,40 @@ export default function WorkoutsPage() {
     }
   }
 
+  async function handleDeleteTemplate(id: string) {
+    setTemplateActionId(id)
+    try {
+      const res = await fetch(`/api/workouts/templates/${id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Could not delete template.')
+        return
+      }
+      setTemplates((prev) => prev.filter((t) => t._id !== id))
+    } catch {
+      setError('Could not delete template right now.')
+    } finally {
+      setTemplateActionId(null)
+    }
+  }
+
+  async function handleLogTemplate(id: string) {
+    setTemplateActionId(id)
+    try {
+      const res = await fetch(`/api/workouts/templates/${id}`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Could not log workout.')
+        return
+      }
+      setWorkouts((prev) => [data, ...prev])
+    } catch {
+      setError('Could not log workout right now.')
+    } finally {
+      setTemplateActionId(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -592,26 +627,47 @@ export default function WorkoutsPage() {
               </p>
             )}
 
-            {templates.map((template) => (
-              <div key={template._id} className="rounded-md border border-border p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="font-semibold">{template.name}</h3>
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                    {template.type}
-                  </span>
+            {templates.map((template) => {
+              const isBusy = templateActionId === template._id
+              return (
+                <div key={template._id} className="rounded-md border border-border p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="font-semibold">{template.name}</h3>
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {template.type}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {(template.scheduleDays ?? [])
+                      .map((day) => day.slice(0, 1).toUpperCase() + day.slice(1))
+                      .join(', ')}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {template.type === 'strength' && template.exercises.length > 0
+                      ? `${template.exercises[0].sets} sets x ${template.exercises[0].reps} reps`
+                      : `${template.duration} min`}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={isBusy}
+                      onClick={() => handleLogTemplate(template._id)}
+                    >
+                      {isBusy ? 'Logging...' : '\u2713 Log as done today'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      disabled={isBusy}
+                      onClick={() => handleDeleteTemplate(template._id)}
+                    >
+                      {isBusy ? '...' : 'Delete'}
+                    </Button>
+                  </div>
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {(template.scheduleDays ?? [])
-                    .map((day) => day.slice(0, 1).toUpperCase() + day.slice(1))
-                    .join(', ')}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {template.type === 'strength' && template.exercises.length > 0
-                    ? `${template.exercises[0].sets} sets x ${template.exercises[0].reps} reps`
-                    : `${template.duration} min`}
-                </p>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </CardContent>
       </Card>
