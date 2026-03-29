@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { createWorkoutTemplate, getWorkoutTemplatesByUser } from '@/backend/services/workoutService'
 import { validateWorkoutTemplate } from '@/backend/validators'
 
+// Returns saved recurring workout templates for the authenticated user.
 export async function GET() {
   try {
     const { user, error } = await getAuthenticatedUser()
@@ -15,6 +16,7 @@ export async function GET() {
   }
 }
 
+// Validates and creates a recurring workout template for the authenticated user.
 export async function POST(req: NextRequest) {
   try {
     const { user, error } = await getAuthenticatedUser()

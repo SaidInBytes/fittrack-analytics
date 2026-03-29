@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { getUserSettings, updateUserSettings } from '@/backend/services/userService'
 
+// Type guard used to validate numeric profile fields from request payloads.
 function isPositiveNumber(value: unknown): value is number {
   return typeof value === 'number' && !Number.isNaN(value) && value > 0
 }
 
+// Returns account settings for the authenticated user.
 export async function GET() {
   try {
     const { user, error } = await getAuthenticatedUser()
@@ -23,6 +25,7 @@ export async function GET() {
   }
 }
 
+// Validates and updates account settings for the authenticated user.
 export async function PUT(req: NextRequest) {
   try {
     const { user, error } = await getAuthenticatedUser()

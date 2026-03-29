@@ -17,6 +17,7 @@ export interface ExerciseSuggestion {
 
 const WGER_BASE_URL = 'https://wger.de/api/v2'
 
+// Searches wger exercises and returns normalized suggestions for the UI autocomplete.
 export async function searchWgerExercises(query: string, limit = 10): Promise<ExerciseSuggestion[]> {
   const normalizedQuery = query.trim()
 

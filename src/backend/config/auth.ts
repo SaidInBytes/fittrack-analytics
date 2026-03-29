@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { connectDB } from '@/backend/config/db'
 import UserModel from '@/backend/models/User'
 
+// NextAuth credentials strategy with JWT session enrichment for user id.
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -12,6 +13,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
+      // Verifies email/password against MongoDB and returns the session identity.
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Missing credentials')
@@ -45,12 +47,14 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
   },
   callbacks: {
+    // Persists user id into the JWT at sign-in time.
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
       }
       return token
     },
+    // Exposes token id on session.user for authenticated route handlers.
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id

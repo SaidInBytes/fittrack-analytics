@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { registerUser } from '@/backend/services/userService'
 import { validateRegistration } from '@/backend/validators'
 
+// Validates and creates a new user account.
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()

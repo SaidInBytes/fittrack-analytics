@@ -1,5 +1,6 @@
 import type { Nutrition, Progress, Workout } from '@/types'
 
+// Validates a one-off workout payload before it is stored.
 export function validateWorkout(data: Partial<Workout>): string | null {
   if (!data.name || typeof data.name !== 'string') return 'Name is required'
   if (!data.type || !['strength', 'cardio', 'flexibility', 'mixed'].includes(data.type)) {
@@ -29,6 +30,7 @@ export function validateWorkout(data: Partial<Workout>): string | null {
   return null
 }
 
+// Validates a recurring workout template payload and schedule days.
 export function validateWorkoutTemplate(data: Partial<Workout>): string | null {
   if (!data.name || typeof data.name !== 'string') return 'Name is required'
   if (!data.type || !['strength', 'cardio', 'flexibility', 'mixed'].includes(data.type)) {
@@ -69,6 +71,7 @@ export function validateWorkoutTemplate(data: Partial<Workout>): string | null {
   return null
 }
 
+// Validates nutrition logs including nested meals and foods.
 export function validateNutrition(data: Partial<Nutrition>): string | null {
   if (!data.date) return 'Date is required'
   if (!data.meals || !Array.isArray(data.meals)) return 'Meals must be an array'
@@ -104,6 +107,7 @@ export function validateNutrition(data: Partial<Nutrition>): string | null {
   return null
 }
 
+// Validates progress entries such as weight and body measurements.
 export function validateProgress(data: Partial<Progress>): string | null {
   if (!data.date) return 'Date is required'
 
@@ -128,6 +132,7 @@ export function validateProgress(data: Partial<Progress>): string | null {
   return null
 }
 
+// Validates registration payload shape and minimum security constraints.
 export function validateRegistration(data: any): string | null {
   if (!data.name || typeof data.name !== 'string') return 'Name is required'
   if (!data.email || typeof data.email !== 'string') return 'Email is required'

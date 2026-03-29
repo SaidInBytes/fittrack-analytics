@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { deleteWorkoutTemplate, logTemplateAsWorkout } from '@/backend/services/workoutService'
 
+// Deletes a specific template owned by the authenticated user.
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
@@ -21,6 +22,7 @@ export async function DELETE(
   }
 }
 
+// Logs a template as today's completed workout for the authenticated user.
 export async function POST(
   _req: NextRequest,
   { params }: { params: { id: string } }
