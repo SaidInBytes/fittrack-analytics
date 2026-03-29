@@ -6,9 +6,19 @@ import { useSession } from 'next-auth/react'
 import { format } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import type { Workout } from '@/types'
+import type { Weekday, Workout } from '@/types'
 
 type WorkoutType = Workout['type']
+
+const WEEKDAYS: { value: Weekday; label: string }[] = [
+  { value: 'monday', label: 'Mon' },
+  { value: 'tuesday', label: 'Tue' },
+  { value: 'wednesday', label: 'Wed' },
+  { value: 'thursday', label: 'Thu' },
+  { value: 'friday', label: 'Fri' },
+  { value: 'saturday', label: 'Sat' },
+  { value: 'sunday', label: 'Sun' },
+]
 
 interface WorkoutFormState {
   name: string
@@ -19,6 +29,17 @@ interface WorkoutFormState {
   reps: string
   weight: string
   date: string
+}
+
+interface TemplateFormState {
+  name: string
+  type: WorkoutType
+  duration: string
+  exerciseName: string
+  sets: string
+  reps: string
+  weight: string
+  scheduleDays: Weekday[]
 }
 
 const initialForm: WorkoutFormState = {
@@ -32,16 +53,30 @@ const initialForm: WorkoutFormState = {
   date: new Date().toISOString().slice(0, 10),
 }
 
+const initialTemplateForm: TemplateFormState = {
+  name: '',
+  type: 'strength',
+  duration: '',
+  exerciseName: '',
+  sets: '',
+  reps: '',
+  weight: '',
+  scheduleDays: ['monday'],
+}
+
 export default function WorkoutsPage() {
   const router = useRouter()
   const { status } = useSession()
   const [workouts, setWorkouts] = useState<Workout[]>([])
+  const [templates, setTemplates] = useState<Workout[]>([])
   const [form, setForm] = useState<WorkoutFormState>(initialForm)
+  const [templateForm, setTemplateForm] = useState<TemplateFormState>(initialTemplateForm)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSearchingExercises, setIsSearchingExercises] = useState(false)
   const [exerciseSuggestions, setExerciseSuggestions] = useState<Array<{ id: number; name: string }>>([])
   const [hasSearchedExercises, setHasSearchedExercises] = useState(false)
+  const [isTemplateSubmitting, setIsTemplateSubmitting] = useState(false)
   const [error, setError] = useState('')
   const skipNextExerciseSearch = useRef(false)
 
@@ -62,15 +97,19 @@ export default function WorkoutsPage() {
       setError('')
 
       try {
-        const res = await fetch('/api/workouts', { cache: 'no-store' })
+        const [workoutsRes, templatesRes] = await Promise.all([
+          fetch('/api/workouts', { cache: 'no-store' }),
+          fetch('/api/workouts/templates', { cache: 'no-store' }),
+        ])
 
-        if (!res.ok) {
+        if (!workoutsRes.ok || !templatesRes.ok) {
           throw new Error('Failed to load workouts')
         }
 
-        const data = await res.json()
+        const [workoutsData, templatesData] = await Promise.all([workoutsRes.json(), templatesRes.json()])
         if (!cancelled) {
-          setWorkouts(data)
+          setWorkouts(workoutsData)
+          setTemplates(templatesData)
         }
       } catch {
         if (!cancelled) {
@@ -216,11 +255,95 @@ export default function WorkoutsPage() {
     }
   }
 
+  function toggleTemplateDay(day: Weekday) {
+    setTemplateForm((prev) => {
+      const exists = prev.scheduleDays.includes(day)
+      const nextDays = exists
+        ? prev.scheduleDays.filter((currentDay) => currentDay !== day)
+        : [...prev.scheduleDays, day]
+
+      return {
+        ...prev,
+        scheduleDays: nextDays,
+      }
+    })
+  }
+
+  async function handleTemplateSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError('')
+
+    const duration = Number(templateForm.duration)
+    const sets = Number(templateForm.sets)
+    const reps = Number(templateForm.reps)
+    const weight = Number(templateForm.weight)
+    const isStrength = templateForm.type === 'strength'
+
+    if (!templateForm.name || templateForm.scheduleDays.length === 0) {
+      setError('Please provide a workout name and at least one schedule day.')
+      return
+    }
+
+    if (!isStrength && (Number.isNaN(duration) || duration <= 0)) {
+      setError('Duration must be a positive number for this workout type.')
+      return
+    }
+
+    if (
+      isStrength &&
+      (!templateForm.exerciseName || Number.isNaN(sets) || Number.isNaN(reps) || sets <= 0 || reps <= 0)
+    ) {
+      setError('For strength workouts, exercise name, sets and reps are required.')
+      return
+    }
+
+    setIsTemplateSubmitting(true)
+
+    try {
+      const res = await fetch('/api/workouts/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: templateForm.name,
+          type: templateForm.type,
+          duration: isStrength ? 0 : duration,
+          scheduleDays: templateForm.scheduleDays,
+          exercises: isStrength
+            ? [
+                {
+                  exerciseName: templateForm.exerciseName,
+                  sets,
+                  reps,
+                  weight: Number.isNaN(weight) ? 0 : weight,
+                },
+              ]
+            : [],
+        }),
+      })
+
+      const created = await res.json()
+
+      if (!res.ok) {
+        setError(created.error || 'Could not create workout template.')
+        return
+      }
+
+      setTemplates((prev) => [created, ...prev])
+      setTemplateForm(initialTemplateForm)
+    } catch {
+      setError('Could not create workout template right now.')
+    } finally {
+      setIsTemplateSubmitting(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Workouts</h1>
-        <p className="text-muted-foreground">Log new sessions and review your training history.</p>
+        <p className="text-muted-foreground">
+          Save your permanent workout schedule and log completed sessions.
+        </p>
       </div>
 
       {error && (
@@ -349,6 +472,147 @@ export default function WorkoutsPage() {
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>My Workout Schedule</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form onSubmit={handleTemplateSubmit} className="grid grid-cols-1 gap-3 md:grid-cols-4">
+            <input
+              type="text"
+              placeholder="Template name"
+              value={templateForm.name}
+              onChange={(e) => setTemplateForm((prev) => ({ ...prev, name: e.target.value }))}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              required
+            />
+            <select
+              value={templateForm.type}
+              onChange={(e) =>
+                setTemplateForm((prev) => ({ ...prev, type: e.target.value as WorkoutType }))
+              }
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="strength">Strength</option>
+              <option value="cardio">Cardio</option>
+              <option value="flexibility">Flexibility</option>
+              <option value="mixed">Mixed</option>
+            </select>
+
+            {templateForm.type === 'strength' ? (
+              <>
+                <input
+                  type="text"
+                  placeholder="Exercise name"
+                  value={templateForm.exerciseName}
+                  onChange={(e) =>
+                    setTemplateForm((prev) => ({ ...prev, exerciseName: e.target.value }))
+                  }
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  required
+                />
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Sets"
+                  value={templateForm.sets}
+                  onChange={(e) => setTemplateForm((prev) => ({ ...prev, sets: e.target.value }))}
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  required
+                />
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Reps"
+                  value={templateForm.reps}
+                  onChange={(e) => setTemplateForm((prev) => ({ ...prev, reps: e.target.value }))}
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  required
+                />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="Weight (optional)"
+                  value={templateForm.weight}
+                  onChange={(e) => setTemplateForm((prev) => ({ ...prev, weight: e.target.value }))}
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+              </>
+            ) : (
+              <input
+                type="number"
+                min="1"
+                placeholder="Duration (minutes)"
+                value={templateForm.duration}
+                onChange={(e) => setTemplateForm((prev) => ({ ...prev, duration: e.target.value }))}
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                required
+              />
+            )}
+
+            <div className="md:col-span-4">
+              <p className="mb-2 text-sm font-medium">Repeat on</p>
+              <div className="flex flex-wrap gap-2">
+                {WEEKDAYS.map((day) => {
+                  const isActive = templateForm.scheduleDays.includes(day.value)
+
+                  return (
+                    <button
+                      key={day.value}
+                      type="button"
+                      onClick={() => toggleTemplateDay(day.value)}
+                      className={`rounded-md border px-3 py-2 text-xs font-medium transition ${
+                        isActive
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground'
+                      }`}
+                    >
+                      {day.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="md:col-span-4">
+              <Button type="submit" disabled={isTemplateSubmitting}>
+                {isTemplateSubmitting ? 'Saving...' : 'Save Schedule'}
+              </Button>
+            </div>
+          </form>
+
+          <div className="space-y-3 border-t border-border pt-4">
+            {templates.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No saved schedule yet. Create one above and it will stay here.
+              </p>
+            )}
+
+            {templates.map((template) => (
+              <div key={template._id} className="rounded-md border border-border p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="font-semibold">{template.name}</h3>
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                    {template.type}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {(template.scheduleDays ?? [])
+                    .map((day) => day.slice(0, 1).toUpperCase() + day.slice(1))
+                    .join(', ')}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {template.type === 'strength' && template.exercises.length > 0
+                    ? `${template.exercises[0].sets} sets x ${template.exercises[0].reps} reps`
+                    : `${template.duration} min`}
+                </p>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

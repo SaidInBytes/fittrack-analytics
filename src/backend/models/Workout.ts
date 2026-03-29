@@ -15,6 +15,12 @@ const WorkoutSchema = new Schema({
   type: { type: String, enum: ['strength', 'cardio', 'flexibility', 'mixed'], required: true },
   duration: { type: Number, required: true },
   exercises: [ExerciseSchema],
+  isTemplate: { type: Boolean, default: false, index: true },
+  scheduleDays: {
+    type: [String],
+    enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+    default: [],
+  },
   notes: String,
   createdAt: { type: Date, default: Date.now },
 })
