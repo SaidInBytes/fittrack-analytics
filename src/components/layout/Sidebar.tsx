@@ -3,10 +3,11 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Dumbbell, Apple, TrendingUp, Settings } from 'lucide-react'
+import { LayoutDashboard, Dumbbell, Apple, TrendingUp, Settings, CalendarRange } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/plan', label: 'Plan Workout', icon: CalendarRange },
   { href: '/dashboard/workouts', label: 'Workouts', icon: Dumbbell },
   { href: '/dashboard/nutrition', label: 'Nutrition', icon: Apple },
   { href: '/dashboard/progress', label: 'Progress', icon: TrendingUp },
