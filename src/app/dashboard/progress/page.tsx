@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 import { format } from 'date-fns'
 import {
   CartesianGrid,
@@ -46,8 +44,6 @@ function toOptionalNumber(value: string): number | undefined {
 }
 
 export default function ProgressPage() {
-  const router = useRouter()
-  const { status } = useSession()
   const [progressEntries, setProgressEntries] = useState<Progress[]>([])
   const [form, setForm] = useState<ProgressFormState>(initialForm)
   const [isLoading, setIsLoading] = useState(true)
@@ -55,15 +51,6 @@ export default function ProgressPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-      return
-    }
-
-    if (status !== 'authenticated') {
-      return
-    }
-
     let cancelled = false
 
     async function loadProgress() {
@@ -98,7 +85,7 @@ export default function ProgressPage() {
     return () => {
       cancelled = true
     }
-  }, [router, status])
+  }, [])
 
   const weightTrend = useMemo(() => {
     return [...progressEntries]

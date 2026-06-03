@@ -111,8 +111,6 @@ function SkeletonCard() {
 }
 
 export default function WorkoutsPage() {
-  const router = useRouter()
-  const { status } = useSession()
   const [workouts, setWorkouts] = useState<Workout[]>([])
   const [templates, setTemplates] = useState<Workout[]>([])
   const [form, setForm] = useState<WorkoutFormState>(initialForm)
@@ -130,15 +128,6 @@ export default function WorkoutsPage() {
   const skipNextExerciseSearch = useRef(false)
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-      return
-    }
-
-    if (status !== 'authenticated') {
-      return
-    }
-
     let cancelled = false
 
     async function loadWorkouts() {
@@ -176,7 +165,7 @@ export default function WorkoutsPage() {
     return () => {
       cancelled = true
     }
-  }, [router, status])
+  }, [])
 
   useEffect(() => {
     if (form.type !== 'strength') {

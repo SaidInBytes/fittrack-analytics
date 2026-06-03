@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 import { format } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -47,8 +45,6 @@ interface FoodSuggestion {
 }
 
 export default function NutritionPage() {
-  const router = useRouter()
-  const { status } = useSession()
   const [nutritionEntries, setNutritionEntries] = useState<Nutrition[]>([])
   const [form, setForm] = useState<NutritionFormState>(initialForm)
   const [isLoading, setIsLoading] = useState(true)
@@ -60,15 +56,6 @@ export default function NutritionPage() {
   const skipNextFoodSearch = useRef(false)
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-      return
-    }
-
-    if (status !== 'authenticated') {
-      return
-    }
-
     let cancelled = false
 
     async function loadNutrition() {
@@ -103,7 +90,7 @@ export default function NutritionPage() {
     return () => {
       cancelled = true
     }
-  }, [router, status])
+  }, [])
 
   useEffect(() => {
     if (skipNextFoodSearch.current) {

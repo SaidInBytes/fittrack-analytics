@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react'
 import { SessionProvider } from 'next-auth/react'
-import { useSession } from 'next-auth/react'
 
 function applyDarkMode(enabled: boolean) {
   const root = document.documentElement
@@ -10,8 +9,6 @@ function applyDarkMode(enabled: boolean) {
 }
 
 function ThemeSync() {
-  const { status } = useSession()
-
   useEffect(() => {
     if (typeof window === 'undefined') return
 
@@ -23,10 +20,6 @@ function ThemeSync() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-
-    if (status !== 'authenticated') {
-      return
-    }
 
     let cancelled = false
 
@@ -52,7 +45,7 @@ function ThemeSync() {
     return () => {
       cancelled = true
     }
-  }, [status])
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return

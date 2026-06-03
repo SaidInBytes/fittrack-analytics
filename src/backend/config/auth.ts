@@ -19,14 +19,17 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Missing credentials')
         }
 
+        const email = credentials.email.trim().toLowerCase()
+        const password = credentials.password
+
         await connectDB()
-        const user = await UserModel.findOne({ email: credentials.email }).select('+password')
+        const user = await UserModel.findOne({ email }).select('+password')
 
         if (!user || !user.password) {
           throw new Error('Invalid credentials')
         }
 
-        const isValid = await bcrypt.compare(credentials.password, user.password)
+        const isValid = await bcrypt.compare(password, user.password)
 
         if (!isValid) {
           throw new Error('Invalid credentials')

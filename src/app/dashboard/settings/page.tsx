@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 
@@ -37,8 +35,6 @@ function toOptionalNumber(value: string): number | undefined {
 }
 
 export default function SettingsPage() {
-  const router = useRouter()
-  const { status } = useSession()
   const [form, setForm] = useState<SettingsFormState>(initialForm)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -46,15 +42,6 @@ export default function SettingsPage() {
   const [successMessage, setSuccessMessage] = useState('')
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-      return
-    }
-
-    if (status !== 'authenticated') {
-      return
-    }
-
     let cancelled = false
 
     async function loadSettings() {
@@ -99,7 +86,7 @@ export default function SettingsPage() {
     return () => {
       cancelled = true
     }
-  }, [router, status])
+  }, [])
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

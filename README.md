@@ -4,6 +4,8 @@ FitTrack Analytics is a full-stack fitness tracker built with Next.js 14, TypeSc
 
 It includes authentication, workout and template management, nutrition and progress tracking, analytics charts, and a workout planner powered by wger data.
 
+Visitors can also open a shared seeded dashboard directly without creating an account.
+
 ## Highlights
 
 - Credential authentication with NextAuth
@@ -77,12 +79,24 @@ MONGODB_URI=mongodb://localhost:27017/fittrack
 NEXTAUTH_SECRET=your-super-secret-key-change-this-in-production
 NEXTAUTH_URL=http://localhost:3000
 WGER_API_KEY=your-wger-api-key
+DEMO_USER_EMAIL=your-shared-access-email@example.com
+DEMO_USER_PASSWORD=change-me-in-production
+DEMO_USER_NAME=Shared Access
 ```
 
 Notes:
 
 - `WGER_API_KEY` is optional.
+- The shared access profile is created automatically the first time an unauthenticated visitor opens the dashboard.
 - Restart `npm run dev` after changing environment variables.
+
+## Shared Access
+
+Visitors can open `/dashboard` directly to browse a seeded shared profile.
+
+- The shared profile is created automatically on first visit.
+- The app seeds workouts, workout templates, nutrition logs, and progress history if the shared profile is empty.
+- Override the shared profile values with `DEMO_USER_EMAIL`, `DEMO_USER_PASSWORD`, and `DEMO_USER_NAME` if you want different server-side values.
 
 ### Run Locally
 

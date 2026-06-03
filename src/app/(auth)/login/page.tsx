@@ -85,6 +85,18 @@ function LoginForm() {
             {error}
           </div>
         )}
+        <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
+          <p className="font-medium text-primary">Open the app directly</p>
+          <p className="mt-1 text-muted-foreground">
+            You can browse the shared dashboard immediately without creating an account.
+          </p>
+          <Link
+            href="/dashboard"
+            className="mt-3 block w-full rounded-md border border-primary/30 bg-background px-4 py-2 text-center font-medium text-primary shadow-sm transition hover:bg-primary/10"
+          >
+            Continue to dashboard
+          </Link>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>

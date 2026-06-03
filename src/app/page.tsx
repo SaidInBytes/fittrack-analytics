@@ -43,8 +43,14 @@ export default function Home() {
 
         <div className="flex flex-col justify-center gap-3 sm:flex-row">
           <Link
-            href="/login"
+            href="/dashboard"
             className="rounded-md bg-primary px-6 py-3 text-primary-foreground font-medium shadow-sm transition hover:bg-primary/90"
+          >
+            Open Dashboard
+          </Link>
+          <Link
+            href="/login"
+            className="rounded-md border border-primary/30 bg-primary/5 px-6 py-3 font-medium text-primary transition hover:bg-primary/10"
           >
             Login
           </Link>
@@ -55,6 +61,10 @@ export default function Home() {
             Register
           </Link>
         </div>
+
+        <p className="mx-auto max-w-lg text-sm text-muted-foreground">
+          Visitors can open a shared dashboard instantly with workouts, nutrition, progress, and planner data already in place.
+        </p>
       </div>
     </main>
   )

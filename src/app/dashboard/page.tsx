@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 import { format } from 'date-fns'
 import {
   Line,
@@ -50,22 +48,11 @@ function StatCard({
 }
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const { status } = useSession()
   const [data, setData] = useState<DashboardData>({ workouts: [], nutrition: [], progress: [] })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-      return
-    }
-
-    if (status !== 'authenticated') {
-      return
-    }
-
     let cancelled = false
 
     async function loadDashboard() {
@@ -108,7 +95,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true
     }
-  }, [router, status])
+  }, [])
 
   const totalWorkoutMinutes = useMemo(
     () => data.workouts.reduce((sum, workout) => sum + (workout.duration || 0), 0),
@@ -136,7 +123,7 @@ export default function DashboardPage() {
       }))
   }, [data.workouts])
 
-  if (isLoading || status === 'loading') {
+  if (isLoading) {
     return <p className="text-sm text-muted-foreground">Loading dashboard...</p>
   }
 

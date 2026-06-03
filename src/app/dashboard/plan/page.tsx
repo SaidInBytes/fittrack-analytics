@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 import {
   Dumbbell,
   RefreshCcw,
@@ -160,18 +159,11 @@ function ExerciseCard({
 
 export default function WorkoutPlannerPage() {
   const router = useRouter()
-  const { status } = useSession()
-
   const [selectedType, setSelectedType] = useState<WorkoutPlanType | null>(null)
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null)
   const [plan, setPlan] = useState<WorkoutPlan | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-
-  if (status === 'unauthenticated') {
-    router.push('/login')
-    return null
-  }
 
   async function handleGenerate(type: WorkoutPlanType, duration: number) {
     setIsLoading(true)
