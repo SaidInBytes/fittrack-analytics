@@ -4,8 +4,19 @@ import bcrypt from 'bcryptjs'
 import { connectDB } from '@/backend/config/db'
 import UserModel from '@/backend/models/User'
 
+const resolvedAuthSecret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET
+
+if (!process.env.NEXTAUTH_URL && process.env.VERCEL_URL) {
+  process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`
+}
+
+if (process.env.NODE_ENV === 'production' && !resolvedAuthSecret) {
+  throw new Error('Missing NEXTAUTH_SECRET (or AUTH_SECRET) for NextAuth in production.')
+}
+
 // NextAuth credentials strategy with JWT session enrichment for user id.
 export const authOptions: NextAuthOptions = {
+  secret: resolvedAuthSecret,
   providers: [
     CredentialsProvider({
       name: 'credentials',
