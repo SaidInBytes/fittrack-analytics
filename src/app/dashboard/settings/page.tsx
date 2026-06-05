@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Moon, Ruler, Settings, Target, UserRound } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import PageHeader from '@/components/layout/PageHeader'
 
 interface SettingsFormState {
   name: string
@@ -165,15 +167,56 @@ export default function SettingsPage() {
     }
   }
 
-  if (isLoading || status === 'loading') {
-    return <p className="text-sm text-muted-foreground">Loading settings...</p>
+  function updateDarkModePreference(enabled: boolean) {
+    setForm((prev) => ({ ...prev, darkMode: enabled }))
+
+    if (typeof window === 'undefined') return
+
+    document.documentElement.classList.toggle('dark', enabled)
+    window.localStorage.setItem('fittrack.darkMode', String(enabled))
+    window.dispatchEvent(
+      new CustomEvent('fittrack:theme', {
+        detail: { darkMode: enabled },
+      })
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="grid min-h-[60vh] place-items-center">
+        <div className="rounded-lg border border-border bg-card px-5 py-4 text-sm text-muted-foreground shadow-sm">
+          Loading settings...
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your profile details and app preferences.</p>
+    <div className="mx-auto max-w-7xl space-y-6">
+      <PageHeader
+        title="Settings"
+        description="Keep profile metrics and app preferences aligned with how you track training."
+        eyebrow="Control room"
+        icon={Settings}
+        meta={form.unit === 'metric' ? 'Metric tracking' : 'Imperial tracking'}
+      />
+
+      <div className="grid gap-3 md:grid-cols-3">
+        {[
+          { label: 'Profile', value: form.name || 'Shared Access', icon: UserRound },
+          { label: 'Current weight', value: form.currentWeight ? `${form.currentWeight} ${form.unit === 'metric' ? 'kg' : 'lb'}` : '--', icon: Ruler },
+          { label: 'Goal weight', value: form.goalWeight ? `${form.goalWeight} ${form.unit === 'metric' ? 'kg' : 'lb'}` : '--', icon: Target },
+        ].map((item) => (
+          <Card key={item.label} className="p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">{item.label}</p>
+              <div className="rounded-md bg-secondary p-2 text-secondary-foreground">
+                <item.icon className="h-4 w-4" />
+              </div>
+            </div>
+            <p className="text-xl font-semibold">{item.value}</p>
+          </Card>
+        ))}
       </div>
 
       {error && (
@@ -190,7 +233,8 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Profile & Preferences</CardTitle>
+          <CardTitle>Profile & preferences</CardTitle>
+          <p className="text-sm text-muted-foreground">These values shape labels, units and dashboard context.</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSave} className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -199,13 +243,13 @@ export default function SettingsPage() {
               placeholder="Full name"
               value={form.name}
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
               required
             />
             <select
               value={form.activityLevel}
               onChange={(e) => setForm((prev) => ({ ...prev, activityLevel: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
             >
               <option value="">Activity level (optional)</option>
               <option value="sedentary">Sedentary</option>
@@ -220,7 +264,7 @@ export default function SettingsPage() {
               placeholder="Age"
               value={form.age}
               onChange={(e) => setForm((prev) => ({ ...prev, age: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
             />
             <input
               type="number"
@@ -229,7 +273,7 @@ export default function SettingsPage() {
               placeholder={`Height (${form.unit === 'metric' ? 'cm' : 'in'})`}
               value={form.height}
               onChange={(e) => setForm((prev) => ({ ...prev, height: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
             />
             <input
               type="number"
@@ -238,7 +282,7 @@ export default function SettingsPage() {
               placeholder={`Current weight (${form.unit === 'metric' ? 'kg' : 'lb'})`}
               value={form.currentWeight}
               onChange={(e) => setForm((prev) => ({ ...prev, currentWeight: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
             />
             <input
               type="number"
@@ -247,40 +291,41 @@ export default function SettingsPage() {
               placeholder={`Goal weight (${form.unit === 'metric' ? 'kg' : 'lb'})`}
               value={form.goalWeight}
               onChange={(e) => setForm((prev) => ({ ...prev, goalWeight: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
             />
             <input
               type="text"
               placeholder="Goals (comma separated)"
               value={form.goals}
               onChange={(e) => setForm((prev) => ({ ...prev, goals: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm md:col-span-2"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm md:col-span-2"
             />
 
-            <div className="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
-              <label htmlFor="unit" className="text-muted-foreground">
-                Units
-              </label>
+            <div className="flex items-center gap-2 rounded-md border border-input bg-background/80 px-3 py-2 text-sm">
+              <label htmlFor="unit" className="font-medium text-foreground">Units</label>
               <select
                 id="unit"
                 value={form.unit}
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, unit: e.target.value as 'metric' | 'imperial' }))
                 }
-                className="ml-auto bg-transparent"
+                className="ml-auto bg-transparent text-sm"
               >
                 <option value="metric">Metric</option>
                 <option value="imperial">Imperial</option>
               </select>
             </div>
 
-            <label className="flex items-center justify-between rounded-md border border-input px-3 py-2 text-sm">
-              <span className="text-muted-foreground">Dark mode preference</span>
+            <label className="flex items-center justify-between rounded-md border border-input bg-background/80 px-3 py-2 text-sm">
+              <span className="inline-flex items-center gap-2 font-medium text-foreground">
+                <Moon className="h-4 w-4 text-muted-foreground" />
+                Dark mode preference
+              </span>
               <input
                 type="checkbox"
                 checked={form.darkMode}
-                onChange={(e) => setForm((prev) => ({ ...prev, darkMode: e.target.checked }))}
-                className="h-4 w-4"
+                onChange={(e) => updateDarkModePreference(e.target.checked)}
+                className="h-4 w-4 accent-emerald-500"
               />
             </label>
 

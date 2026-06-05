@@ -146,7 +146,7 @@ export default function DashboardPage() {
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-emerald-100">
               <Sparkles className="h-3.5 w-3.5" />
-              Demo workspace online
+              Training workspace online
             </div>
             <div className="space-y-2">
               <h1 className="max-w-3xl text-balance text-4xl font-semibold tracking-normal sm:text-5xl">

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { SessionProvider } from 'next-auth/react'
+import { SessionProvider, useSession } from 'next-auth/react'
 
 function applyDarkMode(enabled: boolean) {
   const root = document.documentElement
@@ -9,6 +9,8 @@ function applyDarkMode(enabled: boolean) {
 }
 
 function ThemeSync() {
+  const { status } = useSession()
+
   useEffect(() => {
     if (typeof window === 'undefined') return
 
@@ -20,11 +22,14 @@ function ThemeSync() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    if (status === 'loading') return
 
     let cancelled = false
 
     async function loadThemePreference() {
       try {
+        if (status === 'unauthenticated') return
+
         const res = await fetch('/api/user', { cache: 'no-store' })
         if (!res.ok) return
 
@@ -45,7 +50,7 @@ function ThemeSync() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [status])
 
   useEffect(() => {
     if (typeof window === 'undefined') return

@@ -72,7 +72,7 @@ function LoginForm() {
           </div>
           <h1 className="text-2xl font-bold text-center">Welcome Back</h1>
           <p className="text-sm text-muted-foreground text-center">
-            Logga in för att fortsätta din träning och följa din progress.
+            Log in to continue tracking your training and progress.
           </p>
         </div>
 
@@ -87,15 +87,15 @@ function LoginForm() {
           </div>
         )}
         <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
-          <p className="font-medium text-primary">Open the app directly</p>
+          <p className="font-medium text-primary">Use guest workout planner</p>
           <p className="mt-1 text-muted-foreground">
-            You can browse the shared dashboard immediately without creating an account.
+            Guests can build workout plans. Create an account to save and log sessions.
           </p>
           <Link
-            href="/dashboard"
+            href="/dashboard/plan"
             className="mt-3 block w-full rounded-md border border-primary/30 bg-background px-4 py-2 text-center font-medium text-primary shadow-sm transition hover:bg-primary/10"
           >
-            Continue to dashboard
+            Continue as guest
           </Link>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">

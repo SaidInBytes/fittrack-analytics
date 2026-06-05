@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
+import { validateSameOriginWrite } from '@/backend/middleware/apiSecurity'
 import { getWorkoutsByUser, createWorkout } from '@/backend/services/workoutService'
 import { validateWorkout } from '@/backend/validators'
 import { fallbackWorkouts, isDatabaseConnectionError } from '@/backend/services/fallbackData'
@@ -24,6 +25,9 @@ export async function GET() {
 // Validates and creates a new workout for the authenticated user.
 export async function POST(req: NextRequest) {
   try {
+    const securityError = validateSameOriginWrite(req)
+    if (securityError) return securityError
+
     const { user, error } = await getAuthenticatedUser()
     if (error) return error
 

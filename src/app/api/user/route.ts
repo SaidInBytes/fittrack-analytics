@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
+import { validateSameOriginWrite } from '@/backend/middleware/apiSecurity'
 import { getUserSettings, updateUserSettings } from '@/backend/services/userService'
 import { fallbackUser, isDatabaseConnectionError } from '@/backend/services/fallbackData'
 
@@ -32,6 +33,9 @@ export async function GET() {
 // Validates and updates account settings for the authenticated user.
 export async function PUT(req: NextRequest) {
   try {
+    const securityError = validateSameOriginWrite(req)
+    if (securityError) return securityError
+
     const { user, error } = await getAuthenticatedUser()
     if (error) return error
 

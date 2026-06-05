@@ -11,8 +11,10 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { Activity, Ruler, Scale, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import PageHeader from '@/components/layout/PageHeader'
 import type { Progress } from '@/types'
 
 interface ProgressFormState {
@@ -97,6 +99,7 @@ export default function ProgressPage() {
         weight: entry.weight as number,
       }))
   }, [progressEntries])
+  const latestEntry = progressEntries[0]
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -162,10 +165,31 @@ export default function ProgressPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Progress</h1>
-        <p className="text-muted-foreground">Track body weight and measurements over time.</p>
+    <div className="mx-auto max-w-7xl space-y-6">
+      <PageHeader
+        title="Progress"
+        description="Track body weight, measurements and notes with enough structure to see change over time."
+        eyebrow="Body metrics"
+        icon={TrendingUp}
+        meta={latestEntry?.weight ? `${latestEntry.weight} kg latest` : 'No weight yet'}
+      />
+
+      <div className="grid gap-3 md:grid-cols-3">
+        {[
+          { label: 'Latest weight', value: latestEntry?.weight ? `${latestEntry.weight} kg` : '--', icon: Scale },
+          { label: 'Entries', value: String(progressEntries.length), icon: Activity },
+          { label: 'Trend points', value: String(weightTrend.length), icon: Ruler },
+        ].map((item) => (
+          <Card key={item.label} className="p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">{item.label}</p>
+              <div className="rounded-md bg-secondary p-2 text-secondary-foreground">
+                <item.icon className="h-4 w-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-semibold">{item.value}</p>
+          </Card>
+        ))}
       </div>
 
       {error && (
@@ -176,7 +200,8 @@ export default function ProgressPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Add Progress Entry</CardTitle>
+          <CardTitle>Add progress entry</CardTitle>
+          <p className="text-sm text-muted-foreground">Capture today&apos;s measurements in one pass.</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -184,7 +209,7 @@ export default function ProgressPage() {
               type="date"
               value={form.date}
               onChange={(e) => setForm((prev) => ({ ...prev, date: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
               required
             />
             <input
@@ -194,7 +219,7 @@ export default function ProgressPage() {
               placeholder="Weight (kg)"
               value={form.weight}
               onChange={(e) => setForm((prev) => ({ ...prev, weight: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
             />
             <input
               type="number"
@@ -203,7 +228,7 @@ export default function ProgressPage() {
               placeholder="Chest (cm)"
               value={form.chest}
               onChange={(e) => setForm((prev) => ({ ...prev, chest: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
             />
             <input
               type="number"
@@ -212,7 +237,7 @@ export default function ProgressPage() {
               placeholder="Waist (cm)"
               value={form.waist}
               onChange={(e) => setForm((prev) => ({ ...prev, waist: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
             />
             <input
               type="number"
@@ -221,7 +246,7 @@ export default function ProgressPage() {
               placeholder="Hips (cm)"
               value={form.hips}
               onChange={(e) => setForm((prev) => ({ ...prev, hips: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
             />
             <input
               type="number"
@@ -230,7 +255,7 @@ export default function ProgressPage() {
               placeholder="Arms (cm)"
               value={form.arms}
               onChange={(e) => setForm((prev) => ({ ...prev, arms: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
             />
             <input
               type="number"
@@ -239,14 +264,14 @@ export default function ProgressPage() {
               placeholder="Legs (cm)"
               value={form.legs}
               onChange={(e) => setForm((prev) => ({ ...prev, legs: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
             />
             <input
               type="text"
               placeholder="Notes (optional)"
               value={form.notes}
               onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm md:col-span-2"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm md:col-span-2"
             />
 
             <div className="md:col-span-4">
@@ -260,13 +285,14 @@ export default function ProgressPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Weight Trend (Last 12 Entries)</CardTitle>
+          <CardTitle>Weight trend</CardTitle>
+          <p className="text-sm text-muted-foreground">Last 12 entries with weight values.</p>
         </CardHeader>
         <CardContent className="h-72">
           {weightTrend.length > 1 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={weightTrend}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="day" />
                 <YAxis domain={["dataMin - 1", "dataMax + 1"]} />
                 <Tooltip />
@@ -274,8 +300,8 @@ export default function ProgressPage() {
                   type="monotone"
                   dataKey="weight"
                   stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
+                  strokeWidth={3}
+                  dot={{ r: 4 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -289,9 +315,10 @@ export default function ProgressPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Progress History</CardTitle>
+          <CardTitle>Progress history</CardTitle>
+          <p className="text-sm text-muted-foreground">Recent check-ins and notes.</p>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="grid gap-3 md:grid-cols-2">
           {isLoading && <p className="text-sm text-muted-foreground">Loading progress logs...</p>}
 
           {!isLoading && progressEntries.length === 0 && (
@@ -300,7 +327,7 @@ export default function ProgressPage() {
 
           {!isLoading &&
             progressEntries.map((entry) => (
-              <div key={entry._id} className="rounded-md border border-border p-4">
+              <div key={entry._id} className="rounded-md border border-border bg-background/70 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm font-medium">{format(new Date(entry.date), 'MMM d, yyyy')}</p>
                   {typeof entry.weight === 'number' && (

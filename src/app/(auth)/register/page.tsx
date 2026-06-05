@@ -72,7 +72,7 @@ export default function RegisterPage() {
           </div>
           <h1 className="text-2xl font-bold text-center">Create Account</h1>
           <p className="text-sm text-muted-foreground text-center">
-            Registrera dig för att börja logga träning och följa dina resultat.
+            Create an account to start logging workouts and tracking your results.
           </p>
         </div>
 
@@ -81,6 +81,18 @@ export default function RegisterPage() {
             {error}
           </div>
         )}
+        <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
+          <p className="font-medium text-primary">Use guest workout planner</p>
+          <p className="mt-1 text-muted-foreground">
+            Guests can build workout plans. Create an account to save and log sessions.
+          </p>
+          <Link
+            href="/dashboard/plan"
+            className="mt-3 block w-full rounded-md border border-primary/30 bg-background px-4 py-2 text-center font-medium text-primary shadow-sm transition hover:bg-primary/10"
+          >
+            Continue as guest
+          </Link>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>

@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { format } from 'date-fns'
+import { Apple, Beef, Flame, Wheat } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import PageHeader from '@/components/layout/PageHeader'
 import type { Meal, Nutrition } from '@/types'
 
 type MealType = Meal['mealType']
@@ -54,6 +56,7 @@ export default function NutritionPage() {
   const [hasSearchedFoods, setHasSearchedFoods] = useState(false)
   const [error, setError] = useState('')
   const skipNextFoodSearch = useRef(false)
+  const latestEntry = nutritionEntries[0]
 
   useEffect(() => {
     let cancelled = false
@@ -230,10 +233,35 @@ export default function NutritionPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Nutrition</h1>
-        <p className="text-muted-foreground">Log meals and track your daily calories and macros.</p>
+    <div className="mx-auto max-w-7xl space-y-6">
+      <PageHeader
+        title="Nutrition"
+        description="Log meals and keep calories, protein, carbs and fats visible while you train."
+        eyebrow="Fuel board"
+        icon={Apple}
+        meta={latestEntry ? `${Math.round(latestEntry.totals.calories)} kcal latest log` : 'No logs yet'}
+      />
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          { label: 'Calories', value: latestEntry ? Math.round(latestEntry.totals.calories) : 0, suffix: 'kcal', icon: Flame },
+          { label: 'Protein', value: latestEntry ? Math.round(latestEntry.totals.protein) : 0, suffix: 'g', icon: Beef },
+          { label: 'Carbs', value: latestEntry ? Math.round(latestEntry.totals.carbs) : 0, suffix: 'g', icon: Wheat },
+          { label: 'Fat', value: latestEntry ? Math.round(latestEntry.totals.fat) : 0, suffix: 'g', icon: Apple },
+        ].map((item) => (
+          <Card key={item.label} className="p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">{item.label}</p>
+              <div className="rounded-md bg-secondary p-2 text-secondary-foreground">
+                <item.icon className="h-4 w-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-semibold">
+              {item.value}
+              <span className="ml-1 text-sm text-muted-foreground">{item.suffix}</span>
+            </p>
+          </Card>
+        ))}
       </div>
 
       {error && (
@@ -244,7 +272,8 @@ export default function NutritionPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Add Meal Entry</CardTitle>
+          <CardTitle>Add meal entry</CardTitle>
+          <p className="text-sm text-muted-foreground">Search a food or enter macros manually.</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -252,13 +281,13 @@ export default function NutritionPage() {
               type="date"
               value={form.date}
               onChange={(e) => setForm((prev) => ({ ...prev, date: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
               required
             />
             <select
               value={form.mealType}
               onChange={(e) => setForm((prev) => ({ ...prev, mealType: e.target.value as MealType }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
             >
               <option value="breakfast">Breakfast</option>
               <option value="lunch">Lunch</option>
@@ -270,7 +299,7 @@ export default function NutritionPage() {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, inputMode: e.target.value as NutritionInputMode }))
               }
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
             >
               <option value="serving">Per serving</option>
               <option value="per100g">Per 100g</option>
@@ -280,12 +309,12 @@ export default function NutritionPage() {
               placeholder="Food name"
               value={form.foodName}
               onChange={(e) => setForm((prev) => ({ ...prev, foodName: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
               required
             />
 
             {form.foodName.trim().length >= 2 && !isSearchingFoods && foodSuggestions.length > 0 && (
-              <div className="md:col-span-4 max-h-48 overflow-y-auto rounded-md border border-border bg-background p-1">
+              <div className="md:col-span-4 max-h-48 overflow-y-auto rounded-md border border-border bg-card p-1 shadow-sm">
                 {foodSuggestions.map((food) => (
                   <button
                     key={food.id}
@@ -336,7 +365,7 @@ export default function NutritionPage() {
               placeholder={form.inputMode === 'per100g' ? 'Calories (per 100g)' : 'Calories (per serving)'}
               value={form.calories}
               onChange={(e) => setForm((prev) => ({ ...prev, calories: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
               required
             />
             <input
@@ -348,7 +377,7 @@ export default function NutritionPage() {
               }
               value={form.protein}
               onChange={(e) => setForm((prev) => ({ ...prev, protein: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
               required
             />
             <input
@@ -358,7 +387,7 @@ export default function NutritionPage() {
               placeholder={form.inputMode === 'per100g' ? 'Carbs (g per 100g)' : 'Carbs (g per serving)'}
               value={form.carbs}
               onChange={(e) => setForm((prev) => ({ ...prev, carbs: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
               required
             />
             <input
@@ -368,7 +397,7 @@ export default function NutritionPage() {
               placeholder={form.inputMode === 'per100g' ? 'Fat (g per 100g)' : 'Fat (g per serving)'}
               value={form.fat}
               onChange={(e) => setForm((prev) => ({ ...prev, fat: e.target.value }))}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
               required
             />
 
@@ -380,7 +409,7 @@ export default function NutritionPage() {
                 placeholder="Servings"
                 value={form.servings}
                 onChange={(e) => setForm((prev) => ({ ...prev, servings: e.target.value }))}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
                 required
               />
             ) : (
@@ -391,7 +420,7 @@ export default function NutritionPage() {
                 placeholder="Amount (g)"
                 value={form.grams}
                 onChange={(e) => setForm((prev) => ({ ...prev, grams: e.target.value }))}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="rounded-md border border-input bg-background/80 px-3 py-2 text-sm"
                 required
               />
             )}
@@ -407,9 +436,10 @@ export default function NutritionPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Nutrition History</CardTitle>
+          <CardTitle>Nutrition history</CardTitle>
+          <p className="text-sm text-muted-foreground">Recent intake snapshots.</p>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="grid gap-3 md:grid-cols-2">
           {isLoading && <p className="text-sm text-muted-foreground">Loading nutrition logs...</p>}
 
           {!isLoading && nutritionEntries.length === 0 && (
@@ -418,15 +448,19 @@ export default function NutritionPage() {
 
           {!isLoading &&
             nutritionEntries.map((entry) => (
-              <div key={entry._id} className="rounded-md border border-border p-4">
+              <div key={entry._id} className="rounded-md border border-border bg-background/70 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm font-medium">{format(new Date(entry.date), 'MMM d, yyyy')}</p>
-                  <p className="text-xs text-muted-foreground">{entry.meals.length} meal(s)</p>
+                  <p className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+                    {entry.meals.length} meal(s)
+                  </p>
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {Math.round(entry.totals.calories)} kcal • P {Math.round(entry.totals.protein)}g • C{' '}
-                  {Math.round(entry.totals.carbs)}g • F {Math.round(entry.totals.fat)}g
-                </p>
+                <div className="mt-3 grid grid-cols-4 gap-2 text-center text-xs">
+                  <div className="rounded-md bg-card p-2"><p className="font-semibold">{Math.round(entry.totals.calories)}</p><p className="text-muted-foreground">kcal</p></div>
+                  <div className="rounded-md bg-card p-2"><p className="font-semibold">{Math.round(entry.totals.protein)}g</p><p className="text-muted-foreground">P</p></div>
+                  <div className="rounded-md bg-card p-2"><p className="font-semibold">{Math.round(entry.totals.carbs)}g</p><p className="text-muted-foreground">C</p></div>
+                  <div className="rounded-md bg-card p-2"><p className="font-semibold">{Math.round(entry.totals.fat)}g</p><p className="text-muted-foreground">F</p></div>
+                </div>
               </div>
             ))}
         </CardContent>

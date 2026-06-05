@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { fetchPlannedExercises, WorkoutPlanType } from '@/backend/services/wgerService'
+import { getLocalPlannedExercises } from '@/backend/services/exerciseLibrary'
 
 const VALID_TYPES: WorkoutPlanType[] = ['push', 'pull', 'legs', 'cardio', 'stretch']
 
@@ -16,9 +16,6 @@ const DURATION_TO_COUNT: Record<number, number> = {
 // Returns a list of exercises with images for the requested workout type and duration.
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await getAuthenticatedUser()
-    if (error) return error
-
     const type = req.nextUrl.searchParams.get('type') as WorkoutPlanType | null
     const durationParam = req.nextUrl.searchParams.get('duration')
     const duration = durationParam ? parseInt(durationParam, 10) : NaN
@@ -39,6 +36,18 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ type, duration, count, exercises })
   } catch {
-    return NextResponse.json({ error: 'Failed to build workout plan' }, { status: 502 })
+    const type = req.nextUrl.searchParams.get('type') as WorkoutPlanType | null
+    const durationParam = req.nextUrl.searchParams.get('duration')
+    const duration = durationParam ? parseInt(durationParam, 10) : NaN
+    const fallbackType = type && VALID_TYPES.includes(type) ? type : 'push'
+    const fallbackDuration = DURATION_TO_COUNT[duration] ? duration : 45
+    const count = DURATION_TO_COUNT[fallbackDuration]
+
+    return NextResponse.json({
+      type: fallbackType,
+      duration: fallbackDuration,
+      count,
+      exercises: getLocalPlannedExercises(fallbackType, count),
+    })
   }
 }

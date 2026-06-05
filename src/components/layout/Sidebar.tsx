@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Dumbbell, Apple, TrendingUp, Settings, CalendarRange } from 'lucide-react'
+import { LayoutDashboard, Dumbbell, Apple, TrendingUp, Settings, CalendarRange, LogIn } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -18,10 +18,14 @@ const navItems = [
 interface SidebarProps {
   mobileOpen?: boolean
   onNavigate?: () => void
+  guestMode?: boolean
 }
 
-export default function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
+export default function Sidebar({ mobileOpen = false, onNavigate, guestMode = false }: SidebarProps) {
   const pathname = usePathname()
+  const visibleNavItems = guestMode
+    ? [{ href: '/dashboard/plan', label: 'Plan Workout', icon: CalendarRange }]
+    : navItems
 
   return (
     <aside
@@ -43,12 +47,12 @@ export default function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps
           />
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">FitTrack</h2>
-            <p className="text-xs text-emerald-300">Analytics lab</p>
+            <p className="text-xs text-emerald-300">{guestMode ? 'Guest planner' : 'Analytics lab'}</p>
           </div>
         </Link>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-5">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -64,6 +68,16 @@ export default function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps
             {item.label}
           </Link>
         ))}
+        {guestMode && (
+          <Link
+            href="/login"
+            className="mt-4 flex items-center gap-3 rounded-md border border-white/10 px-3 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-white/10 hover:text-zinc-50"
+            onClick={onNavigate}
+          >
+            <LogIn className="h-4 w-4" />
+            Login to save
+          </Link>
+        )}
       </nav>
     </aside>
   )

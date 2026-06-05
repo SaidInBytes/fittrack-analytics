@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
+import { validateSameOriginWrite } from '@/backend/middleware/apiSecurity'
 import { createWorkoutTemplate, getWorkoutTemplatesByUser } from '@/backend/services/workoutService'
 import { validateWorkoutTemplate } from '@/backend/validators'
 import { fallbackWorkoutTemplates, isDatabaseConnectionError } from '@/backend/services/fallbackData'
@@ -23,6 +24,9 @@ export async function GET() {
 // Validates and creates a recurring workout template for the authenticated user.
 export async function POST(req: NextRequest) {
   try {
+    const securityError = validateSameOriginWrite(req)
+    if (securityError) return securityError
+
     const { user, error } = await getAuthenticatedUser()
     if (error) return error
 

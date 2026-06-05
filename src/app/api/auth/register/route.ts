@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { validateSameOriginWrite } from '@/backend/middleware/apiSecurity'
 import { registerUser } from '@/backend/services/userService'
 import { validateRegistration } from '@/backend/validators'
 
 // Validates and creates a new user account.
 export async function POST(req: NextRequest) {
   try {
+    const securityError = validateSameOriginWrite(req)
+    if (securityError) return securityError
+
     const body = await req.json()
 
     const validationError = validateRegistration(body)

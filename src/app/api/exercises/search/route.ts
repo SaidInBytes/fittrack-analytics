@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { searchWgerExercises } from '@/backend/services/wgerService'
+import { searchLocalExercises } from '@/backend/services/exerciseLibrary'
 
 // Returns exercise autocomplete suggestions from wger for authenticated users.
 export async function GET(req: NextRequest) {
@@ -17,6 +18,7 @@ export async function GET(req: NextRequest) {
     const suggestions = await searchWgerExercises(query)
     return NextResponse.json(suggestions)
   } catch {
-    return NextResponse.json({ error: 'Failed to fetch exercises from wger' }, { status: 502 })
+    const query = req.nextUrl.searchParams.get('query')?.trim() || ''
+    return NextResponse.json(searchLocalExercises(query))
   }
 }

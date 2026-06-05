@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
+import { validateSameOriginWrite } from '@/backend/middleware/apiSecurity'
 import { deleteWorkoutTemplate, logTemplateAsWorkout } from '@/backend/services/workoutService'
 
 // Deletes a specific template owned by the authenticated user.
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const securityError = validateSameOriginWrite(req)
+    if (securityError) return securityError
+
     const { user, error } = await getAuthenticatedUser()
     if (error) return error
 
@@ -24,10 +28,13 @@ export async function DELETE(
 
 // Logs a template as today's completed workout for the authenticated user.
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const securityError = validateSameOriginWrite(req)
+    if (securityError) return securityError
+
     const { user, error } = await getAuthenticatedUser()
     if (error) return error
 

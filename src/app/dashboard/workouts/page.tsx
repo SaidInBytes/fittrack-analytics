@@ -1,12 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 import { format } from 'date-fns'
-import { CalendarDays, Dumbbell } from 'lucide-react'
+import { ArrowRight, CalendarDays, Check, Clock3, Dumbbell, ListChecks, Play, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import PageHeader from '@/components/layout/PageHeader'
 import type { Weekday, Workout } from '@/types'
 
 type WorkoutType = Workout['type']
@@ -61,6 +60,17 @@ interface TemplateFormErrors {
   reps?: string
 }
 
+interface SetLog {
+  weight: string
+  reps: string
+}
+
+interface ActiveWorkout {
+  template: Workout
+  exerciseIndex: number
+  setLogs: SetLog[][]
+}
+
 const initialForm: WorkoutFormState = {
   name: '',
   type: 'strength',
@@ -84,7 +94,7 @@ const initialTemplateForm: TemplateFormState = {
 }
 
 function inputCls(hasError?: string) {
-  return `w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
+  return `w-full rounded-md border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
     hasError ? 'border-destructive focus:ring-destructive/50' : 'border-input'
   }`
 }
@@ -110,6 +120,35 @@ function SkeletonCard() {
   )
 }
 
+function createSetLogs(template: Workout): SetLog[][] {
+  return template.exercises.map((exercise) =>
+    Array.from({ length: Math.max(1, exercise.sets) }, () => ({
+      weight: exercise.weight > 0 ? String(exercise.weight) : '',
+      reps: exercise.reps > 0 ? String(exercise.reps) : '',
+    }))
+  )
+}
+
+function formatExerciseSummary(workout: Workout) {
+  if (workout.type !== 'strength' || workout.exercises.length === 0) {
+    return `${workout.duration} min`
+  }
+
+  return workout.exercises
+    .map((exercise) => `${exercise.exerciseName}: ${exercise.sets} sets x ${exercise.reps} reps`)
+    .join(' · ')
+}
+
+function formatSetNotes(setLogs: SetLog[]) {
+  return setLogs
+    .map((set, index) => {
+      const weight = Number(set.weight) || 0
+      const reps = Number(set.reps) || 0
+      return `Set ${index + 1}: ${weight} kg x ${reps} reps`
+    })
+    .join('; ')
+}
+
 export default function WorkoutsPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([])
   const [templates, setTemplates] = useState<Workout[]>([])
@@ -122,6 +161,8 @@ export default function WorkoutsPage() {
   const [hasSearchedExercises, setHasSearchedExercises] = useState(false)
   const [isTemplateSubmitting, setIsTemplateSubmitting] = useState(false)
   const [templateActionId, setTemplateActionId] = useState<string | null>(null)
+  const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(null)
+  const [activeWorkoutError, setActiveWorkoutError] = useState('')
   const [serverError, setServerError] = useState('')
   const [workoutErrors, setWorkoutErrors] = useState<WorkoutFormErrors>({})
   const [templateErrors, setTemplateErrors] = useState<TemplateFormErrors>({})
@@ -407,13 +448,137 @@ export default function WorkoutsPage() {
     }
   }
 
+  function handleStartTemplate(template: Workout) {
+    if (template.type !== 'strength' || template.exercises.length === 0) {
+      handleLogTemplate(template._id)
+      return
+    }
+
+    setActiveWorkout({
+      template,
+      exerciseIndex: 0,
+      setLogs: createSetLogs(template),
+    })
+    setActiveWorkoutError('')
+    setServerError('')
+  }
+
+  function updateActiveSet(setIndex: number, field: keyof SetLog, value: string) {
+    setActiveWorkout((prev) => {
+      if (!prev) return prev
+
+      return {
+        ...prev,
+        setLogs: prev.setLogs.map((exerciseLogs, exerciseIndex) =>
+          exerciseIndex === prev.exerciseIndex
+            ? exerciseLogs.map((set, currentSetIndex) =>
+                currentSetIndex === setIndex ? { ...set, [field]: value } : set
+              )
+            : exerciseLogs
+        ),
+      }
+    })
+  }
+
+  async function completeActiveExercise() {
+    if (!activeWorkout) return
+
+    const currentLogs = activeWorkout.setLogs[activeWorkout.exerciseIndex] ?? []
+    const hasInvalidSet = currentLogs.some((set) => {
+      const weight = Number(set.weight)
+      const reps = Number(set.reps)
+      return Number.isNaN(weight) || weight < 0 || Number.isNaN(reps) || reps <= 0
+    })
+
+    if (hasInvalidSet) {
+      setActiveWorkoutError('Enter valid kg and reps for every set before continuing.')
+      return
+    }
+
+    setActiveWorkoutError('')
+
+    const isLastExercise = activeWorkout.exerciseIndex >= activeWorkout.template.exercises.length - 1
+    if (!isLastExercise) {
+      setActiveWorkout((prev) => (prev ? { ...prev, exerciseIndex: prev.exerciseIndex + 1 } : prev))
+      return
+    }
+
+    setTemplateActionId(activeWorkout.template._id)
+
+    try {
+      const completedExercises = activeWorkout.template.exercises.map((exercise, index) => {
+        const logs = activeWorkout.setLogs[index] ?? []
+        const completedSets = logs.filter((set) => Number(set.reps) > 0)
+        const lastSet = completedSets[completedSets.length - 1]
+        const totalReps = completedSets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0)
+        const averageReps = Math.max(1, Math.round(totalReps / Math.max(completedSets.length, 1)))
+
+        return {
+          exerciseName: exercise.exerciseName,
+          sets: Math.max(1, completedSets.length),
+          reps: averageReps,
+          weight: Number(lastSet?.weight) || 0,
+          notes: formatSetNotes(logs),
+        }
+      })
+
+      const res = await fetch('/api/workouts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: activeWorkout.template.name.replace(/\s*template\s*$/i, ''),
+          type: activeWorkout.template.type,
+          duration: activeWorkout.template.duration,
+          date: new Date().toISOString().slice(0, 10),
+          exercises: completedExercises,
+          notes: `Completed from template: ${activeWorkout.template.name}`,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        setActiveWorkoutError(data.error || 'Could not save completed workout.')
+        return
+      }
+
+      setWorkouts((prev) => [data, ...prev])
+      setActiveWorkout(null)
+    } catch {
+      setActiveWorkoutError('Could not save completed workout right now.')
+    } finally {
+      setTemplateActionId(null)
+    }
+  }
+
+  const totalWorkoutMinutes = workouts.reduce((sum, workout) => sum + (workout.duration || 0), 0)
+  const strengthSessions = workouts.filter((workout) => workout.type === 'strength').length
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Workouts</h1>
-        <p className="text-muted-foreground">
-          Save your permanent workout schedule and log completed sessions.
-        </p>
+    <div className="mx-auto max-w-7xl space-y-6">
+      <PageHeader
+        title="Workouts"
+        description="Build recurring structure, save templates and keep completed sessions in one clean log."
+        eyebrow="Training ledger"
+        icon={Dumbbell}
+        meta={`${workouts.length} logged sessions`}
+      />
+
+      <div className="grid gap-3 md:grid-cols-3">
+        {[
+          { label: 'Logged sessions', value: String(workouts.length), icon: ListChecks },
+          { label: 'Workout minutes', value: String(totalWorkoutMinutes), icon: Clock3 },
+          { label: 'Saved templates', value: String(templates.length), icon: CalendarDays },
+        ].map((item) => (
+          <Card key={item.label} className="p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">{item.label}</p>
+              <div className="rounded-md bg-secondary p-2 text-secondary-foreground">
+                <item.icon className="h-4 w-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-semibold">{item.value}</p>
+          </Card>
+        ))}
       </div>
 
       {serverError && (
@@ -426,10 +591,123 @@ export default function WorkoutsPage() {
         </div>
       )}
 
+      {activeWorkout && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardHeader>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle>Active workout</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {activeWorkout.template.name} · Exercise {activeWorkout.exerciseIndex + 1} of{' '}
+                  {activeWorkout.template.exercises.length}
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setActiveWorkout(null)}>
+                <X className="mr-2 h-4 w-4" />
+                Cancel
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {(() => {
+              const exercise = activeWorkout.template.exercises[activeWorkout.exerciseIndex]
+              const currentLogs = activeWorkout.setLogs[activeWorkout.exerciseIndex] ?? []
+              const isLastExercise = activeWorkout.exerciseIndex >= activeWorkout.template.exercises.length - 1
+              const isSaving = templateActionId === activeWorkout.template._id
+
+              return (
+                <>
+                  <div className="rounded-lg border border-border bg-background/90 p-4">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Current exercise</p>
+                    <h3 className="mt-1 text-2xl font-semibold">{exercise.exerciseName}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Target: {exercise.sets} sets x {exercise.reps} reps
+                      {exercise.weight > 0 ? ` · ${exercise.weight} kg starting weight` : ''}
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {currentLogs.map((set, index) => (
+                      <div key={index} className="rounded-md border border-border bg-background/80 p-3">
+                        <p className="mb-2 text-sm font-semibold">Set {index + 1}</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className="text-xs font-medium text-muted-foreground">
+                            Kg
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.5"
+                              value={set.weight}
+                              onChange={(e) => updateActiveSet(index, 'weight', e.target.value)}
+                              className={`${inputCls()} mt-1`}
+                            />
+                          </label>
+                          <label className="text-xs font-medium text-muted-foreground">
+                            Reps
+                            <input
+                              type="number"
+                              min="1"
+                              value={set.reps}
+                              onChange={(e) => updateActiveSet(index, 'reps', e.target.value)}
+                              className={`${inputCls()} mt-1`}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {activeWorkoutError && (
+                    <p role="alert" className="text-sm text-destructive">
+                      {activeWorkoutError}
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap gap-2">
+                      {activeWorkout.template.exercises.map((item, index) => (
+                        <span
+                          key={`${item.exerciseName}-${index}`}
+                          className={`rounded-full px-3 py-1 text-xs font-medium ${
+                            index === activeWorkout.exerciseIndex
+                              ? 'bg-primary text-primary-foreground'
+                              : index < activeWorkout.exerciseIndex
+                                ? 'bg-secondary text-secondary-foreground'
+                                : 'bg-background text-muted-foreground'
+                          }`}
+                        >
+                          {index + 1}. {item.exerciseName}
+                        </span>
+                      ))}
+                    </div>
+                    <Button onClick={completeActiveExercise} disabled={isSaving}>
+                      {isSaving ? (
+                        'Saving...'
+                      ) : isLastExercise ? (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Finish workout
+                        </>
+                      ) : (
+                        <>
+                          Finish exercise
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )
+            })()}
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Add Workout ─────────────────────────────────────── */}
       <Card>
         <CardHeader>
-          <CardTitle>Add Workout</CardTitle>
+          <CardTitle>Add workout</CardTitle>
+          <p className="text-sm text-muted-foreground">Log a completed session with just the fields that matter.</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -490,7 +768,7 @@ export default function WorkoutsPage() {
                 </div>
 
                 {form.exerciseName.trim().length >= 2 && !isSearchingExercises && exerciseSuggestions.length > 0 && (
-                  <div className="md:col-span-4 max-h-48 overflow-y-auto rounded-md border border-border bg-background p-1">
+                  <div className="md:col-span-4 max-h-48 overflow-y-auto rounded-md border border-border bg-card p-1 shadow-sm">
                     {exerciseSuggestions.map((exercise) => (
                       <button
                         key={exercise.id}
@@ -627,7 +905,8 @@ export default function WorkoutsPage() {
       {/* ── My Workout Schedule ─────────────────────────────── */}
       <Card>
         <CardHeader>
-          <CardTitle>My Workout Schedule</CardTitle>
+          <CardTitle>Workout schedule</CardTitle>
+          <p className="text-sm text-muted-foreground">Recurring templates stay ready for quick logging.</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleTemplateSubmit} noValidate className="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -786,8 +1065,8 @@ export default function WorkoutsPage() {
                       onClick={() => toggleTemplateDay(day.value)}
                       className={`rounded-md border px-3 py-2 text-xs font-medium transition ${
                         isActive
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground'
+                          ? 'border-zinc-950 bg-zinc-950 text-white'
+                          : 'border-input bg-background/80 text-foreground hover:bg-secondary'
                       }`}
                     >
                       {day.label}
@@ -810,8 +1089,8 @@ export default function WorkoutsPage() {
           {/* Template list */}
           <div className="space-y-3 border-t border-border pt-4">
             {templates.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-8 text-center">
-                <div className="rounded-full bg-muted p-3">
+              <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border bg-background/50 py-8 text-center">
+                <div className="rounded-full bg-secondary p-3">
                   <CalendarDays className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <div>
@@ -825,10 +1104,10 @@ export default function WorkoutsPage() {
               templates.map((template) => {
                 const isBusy = templateActionId === template._id
                 return (
-                  <div key={template._id} className="rounded-md border border-border p-4">
+                  <div key={template._id} className="rounded-md border border-border bg-background/70 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h3 className="font-semibold">{template.name}</h3>
-                      <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                      <span className="rounded-full bg-secondary px-2 py-0.5 text-xs uppercase tracking-wide text-secondary-foreground">
                         {template.type}
                       </span>
                     </div>
@@ -838,18 +1117,28 @@ export default function WorkoutsPage() {
                         .join(', ')}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {template.type === 'strength' && template.exercises.length > 0
-                        ? `${template.exercises[0].sets} sets × ${template.exercises[0].reps} reps`
-                        : `${template.duration} min`}
+                      {formatExerciseSummary(template)}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button
                         size="sm"
                         variant="outline"
                         disabled={isBusy}
-                        onClick={() => handleLogTemplate(template._id)}
+                        onClick={() => handleStartTemplate(template)}
                       >
-                        {isBusy ? 'Logging...' : '✓ Log as done today'}
+                        {isBusy ? (
+                          'Logging...'
+                        ) : template.type === 'strength' && template.exercises.length > 0 ? (
+                          <>
+                            <Play className="mr-2 h-4 w-4" />
+                            Start workout
+                          </>
+                        ) : (
+                          <>
+                            <Check className="mr-2 h-4 w-4" />
+                            Log as done today
+                          </>
+                        )}
                       </Button>
                       <Button
                         size="sm"
@@ -871,9 +1160,12 @@ export default function WorkoutsPage() {
       {/* ── Workout History ──────────────────────────────────── */}
       <Card>
         <CardHeader>
-          <CardTitle>Workout History</CardTitle>
+          <CardTitle>Workout history</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            {strengthSessions} strength sessions in the current log.
+          </p>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="grid gap-3 md:grid-cols-2">
           {isLoading && (
             <>
               <SkeletonCard />
@@ -883,8 +1175,8 @@ export default function WorkoutsPage() {
           )}
 
           {!isLoading && workouts.length === 0 && (
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <div className="rounded-full bg-muted p-3">
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border bg-background/50 py-8 text-center md:col-span-2">
+              <div className="rounded-full bg-secondary p-3">
                 <Dumbbell className="h-6 w-6 text-muted-foreground" />
               </div>
               <div>
@@ -898,19 +1190,28 @@ export default function WorkoutsPage() {
 
           {!isLoading &&
             workouts.map((workout) => (
-              <div key={workout._id} className="rounded-md border border-border p-4">
+              <div key={workout._id} className="rounded-md border border-border bg-background/70 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="font-semibold">{workout.name}</h3>
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                  <span className="rounded-full bg-secondary px-2 py-0.5 text-xs uppercase tracking-wide text-secondary-foreground">
                     {workout.type}
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {workout.type === 'strength' && workout.exercises.length > 0
-                    ? `${workout.exercises[0].sets} sets × ${workout.exercises[0].reps} reps`
-                    : `${workout.duration} min`}{' '}
-                  • {format(new Date(workout.date), 'MMM d, yyyy')}
+                  {formatExerciseSummary(workout)} • {format(new Date(workout.date), 'MMM d, yyyy')}
                 </p>
+                {workout.type === 'strength' && workout.exercises.some((exercise) => exercise.notes) && (
+                  <div className="mt-3 space-y-1 rounded-md border border-border bg-card/60 p-3 text-xs text-muted-foreground">
+                    {workout.exercises
+                      .filter((exercise) => exercise.notes)
+                      .map((exercise) => (
+                        <p key={exercise.exerciseName}>
+                          <span className="font-medium text-foreground">{exercise.exerciseName}:</span>{' '}
+                          {exercise.notes}
+                        </p>
+                      ))}
+                  </div>
+                )}
               </div>
             ))}
         </CardContent>

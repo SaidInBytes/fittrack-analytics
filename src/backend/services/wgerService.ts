@@ -1,3 +1,5 @@
+import { getLocalPlannedExercises, searchLocalExercises } from './exerciseLibrary'
+
 interface WgerSearchItem {
   value: string
   data?: {
@@ -107,9 +109,15 @@ export async function fetchPlannedExercises(
   const categories = PLAN_CATEGORY_IDS[type]
   const perCategory = Math.ceil(count / categories.length)
 
-  const categoryResults = await Promise.all(
-    categories.map((catId) => fetchExercisesByCategory(catId, perCategory))
-  )
+  let categoryResults: WgerExerciseRaw[][]
+
+  try {
+    categoryResults = await Promise.all(
+      categories.map((catId) => fetchExercisesByCategory(catId, perCategory))
+    )
+  } catch {
+    return getLocalPlannedExercises(type, count)
+  }
 
   // Deduplicate across categories
   const seen = new Set<number>()
@@ -125,6 +133,10 @@ export async function fetchPlannedExercises(
     if (unique.length >= count) break
   }
 
+  if (unique.length === 0) {
+    return getLocalPlannedExercises(type, count)
+  }
+
   // Fetch images in parallel
   const planned: PlannedExercise[] = await Promise.all(
     unique.slice(0, count).map(async (ex) => ({
@@ -135,7 +147,13 @@ export async function fetchPlannedExercises(
     }))
   )
 
-  return planned
+  if (planned.length >= count) return planned
+
+  const localFallback = getLocalPlannedExercises(type, count)
+  const seenIds = new Set(planned.map((exercise) => exercise.id))
+  const fill = localFallback.filter((exercise) => !seenIds.has(exercise.id))
+
+  return [...planned, ...fill].slice(0, count)
 }
 
 // Searches wger exercises and returns normalized suggestions for the UI autocomplete.
@@ -145,6 +163,8 @@ export async function searchWgerExercises(query: string, limit = 10): Promise<Ex
   if (normalizedQuery.length < 2) {
     return []
   }
+
+  const localFallback = searchLocalExercises(normalizedQuery, limit)
 
   const params = new URLSearchParams({ term: normalizedQuery })
 
@@ -156,18 +176,24 @@ export async function searchWgerExercises(query: string, limit = 10): Promise<Ex
     headers.Authorization = `Token ${process.env.WGER_API_KEY}`
   }
 
-  const response = await fetch(`${WGER_BASE_URL}/exercise/search/?${params.toString()}`, {
-    headers,
-    next: { revalidate: 3600 },
-  })
+  let response: Response
+
+  try {
+    response = await fetch(`${WGER_BASE_URL}/exercise/search/?${params.toString()}`, {
+      headers,
+      next: { revalidate: 3600 },
+    })
+  } catch {
+    return localFallback
+  }
 
   if (!response.ok) {
-    throw new Error(`wger request failed: ${response.status}`)
+    return localFallback
   }
 
   const payload = (await response.json()) as WgerSearchResponse
 
-  return payload.suggestions
+  const wgerResults = payload.suggestions
     .map((item, index) => {
       const name = item.data?.name || item.value || ''
       const id = item.data?.id ?? index
@@ -177,5 +203,12 @@ export async function searchWgerExercises(query: string, limit = 10): Promise<Ex
       }
     })
     .filter((item) => item.name.length > 0)
-    .slice(0, limit)
+
+  const seenNames = new Set(wgerResults.map((item) => item.name.toLowerCase()))
+  const merged = [
+    ...wgerResults,
+    ...localFallback.filter((item) => !seenNames.has(item.name.toLowerCase())),
+  ]
+
+  return merged.slice(0, limit)
 }

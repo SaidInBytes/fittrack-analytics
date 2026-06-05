@@ -6,9 +6,10 @@ import { Menu, X } from 'lucide-react'
 interface HeaderProps {
   mobileMenuOpen: boolean
   onToggleMobileMenu: () => void
+  guestMode?: boolean
 }
 
-export default function Header({ mobileMenuOpen, onToggleMobileMenu }: HeaderProps) {
+export default function Header({ mobileMenuOpen, onToggleMobileMenu, guestMode = false }: HeaderProps) {
   return (
     <header className="flex items-center justify-between border-b border-border/70 bg-background/85 px-4 py-3 backdrop-blur sm:px-6">
       <div className="flex items-center gap-3">
@@ -33,9 +34,11 @@ export default function Header({ mobileMenuOpen, onToggleMobileMenu }: HeaderPro
       </div>
       <div className="flex items-center gap-3">
         <span className="hidden rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground sm:inline-flex">
-          Demo workspace
+          {guestMode ? 'Guest mode' : 'Workspace online'}
         </span>
-        <span className="text-sm font-medium text-foreground">Welcome back</span>
+        <span className="text-sm font-medium text-foreground">
+          {guestMode ? 'Workout planner only' : 'Welcome back'}
+        </span>
       </div>
     </header>
   )

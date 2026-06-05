@@ -33,7 +33,7 @@ export default function Home() {
                 priority
               />
             )}
-            Live demo workspace
+            Product preview
           </div>
 
           <div className="space-y-4">
@@ -47,15 +47,21 @@ export default function Home() {
 
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/dashboard"
+              href="/dashboard/plan"
               className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-400 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300"
             >
-              Open dashboard
+              Try workout planner
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/login"
+              href="/demo"
               className="inline-flex items-center justify-center rounded-md border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+            >
+              View demo
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center rounded-md border border-white/15 px-5 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
             >
               Login
             </Link>
@@ -70,8 +76,8 @@ export default function Home() {
           <div className="grid max-w-2xl gap-3 sm:grid-cols-3">
             {[
               { icon: LineChart, label: 'Trend view', value: '7-day signal' },
-              { icon: Dumbbell, label: 'Training', value: 'Demo data ready' },
-              { icon: ShieldCheck, label: 'Access', value: 'No account needed' },
+              { icon: Dumbbell, label: 'Training', value: 'Preview workflow' },
+              { icon: ShieldCheck, label: 'Guest mode', value: 'Planner only' },
             ].map((item) => (
               <div key={item.label} className="rounded-lg border border-white/10 bg-white/[0.06] p-4">
                 <item.icon className="mb-4 h-5 w-5 text-emerald-300" />

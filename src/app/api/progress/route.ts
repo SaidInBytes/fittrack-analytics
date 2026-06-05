@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
+import { validateSameOriginWrite } from '@/backend/middleware/apiSecurity'
 import { getProgressByUser, createProgress } from '@/backend/services/progressService'
 import { validateProgress } from '@/backend/validators'
 import { fallbackProgress, isDatabaseConnectionError } from '@/backend/services/fallbackData'
@@ -24,6 +25,9 @@ export async function GET() {
 // Validates and creates a progress entry for the authenticated user.
 export async function POST(req: NextRequest) {
   try {
+    const securityError = validateSameOriginWrite(req)
+    if (securityError) return securityError
+
     const { user, error } = await getAuthenticatedUser()
     if (error) return error
 
