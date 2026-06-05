@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { getNutritionByUser, createNutrition } from '@/backend/services/nutritionService'
 import { validateNutrition } from '@/backend/validators'
+import { fallbackNutrition, isDatabaseConnectionError } from '@/backend/services/fallbackData'
 
 // Returns nutrition entries for the authenticated user.
 export async function GET() {
@@ -12,6 +13,10 @@ export async function GET() {
     const nutrition = await getNutritionByUser(user!.id)
     return NextResponse.json(nutrition)
   } catch (error) {
+    console.error('Nutrition GET error:', error)
+    if (isDatabaseConnectionError(error)) {
+      return NextResponse.json(fallbackNutrition)
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -39,6 +44,7 @@ export async function POST(req: NextRequest) {
     const nutrition = await createNutrition(user!.id, body)
     return NextResponse.json(nutrition, { status: 201 })
   } catch (error) {
+    console.error('Nutrition POST error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

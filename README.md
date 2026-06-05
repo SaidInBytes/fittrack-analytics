@@ -172,7 +172,7 @@ Then open `http://localhost:3000`.
 
 The UI expects a logo file at:
 
-- `public/logo.png`
+- `public/logo.svg`
 
 Used in:
 

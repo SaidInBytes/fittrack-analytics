@@ -15,7 +15,7 @@ export default function DashboardLayout({
   const closeMobileMenu = () => setMobileMenuOpen(false)
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-background text-foreground">
       <Sidebar mobileOpen={mobileMenuOpen} onNavigate={closeMobileMenu} />
       {mobileMenuOpen && (
         <button
@@ -29,7 +29,7 @@ export default function DashboardLayout({
           mobileMenuOpen={mobileMenuOpen}
           onToggleMobileMenu={() => setMobileMenuOpen((prev) => !prev)}
         />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>
   )

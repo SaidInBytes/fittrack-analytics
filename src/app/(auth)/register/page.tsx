@@ -59,10 +59,11 @@ export default function RegisterPage() {
               </div>
             ) : (
               <Image
-                src="/logo.png"
+                src="/logo.svg"
                 alt="FitTrack Analytics logo"
                 width={48}
                 height={48}
+                unoptimized
                 className="h-12 w-12 rounded-xl"
                 onError={() => setLogoError(true)}
                 priority

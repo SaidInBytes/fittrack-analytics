@@ -2,70 +2,115 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Dumbbell } from 'lucide-react'
+import { ArrowRight, Dumbbell, LineChart, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 
 export default function Home() {
   const [logoError, setLogoError] = useState(false)
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-b from-background via-background to-primary/5 p-4">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-20 top-16 h-64 w-64 rounded-full bg-primary/10 blur-3xl animate-drift-slow" />
-        <div className="absolute -right-16 bottom-10 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl animate-float-slow" />
-      </div>
+    <main className="relative min-h-screen overflow-hidden bg-zinc-950 text-white">
+      <div className="surface-grid absolute inset-0 opacity-[0.06]" />
+      <div className="absolute -right-24 top-8 h-72 w-72 bg-emerald-400/20 blur-3xl animate-drift-slow" />
+      <div className="absolute -bottom-28 left-1/4 h-72 w-72 bg-cyan-400/15 blur-3xl animate-float-slow" />
 
-      <div className="relative w-full max-w-2xl space-y-6 rounded-2xl border border-border/70 bg-card/90 p-8 text-center shadow-xl backdrop-blur-sm sm:p-10">
-        <div className="flex justify-center">
-          <div className="animate-float-slow rounded-2xl border border-border/60 bg-background/90 p-2.5 shadow-md">
+      <section className="relative mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-5 py-10 lg:grid-cols-[1fr_420px] lg:px-8">
+        <div className="space-y-8">
+          <div className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-emerald-100">
             {logoError ? (
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
-                <Dumbbell className="h-8 w-8 text-primary" />
+              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-400/20">
+                <Dumbbell className="h-4 w-4 text-emerald-300" />
               </div>
             ) : (
               <Image
-                src="/logo.png"
+                src="/logo.svg"
                 alt="FitTrack Analytics logo"
-                width={56}
-                height={56}
-                className="h-14 w-14 rounded-xl"
+                width={24}
+                height={24}
+                unoptimized
+                className="h-6 w-6 rounded-md"
                 onError={() => setLogoError(true)}
                 priority
               />
             )}
+            Live demo workspace
+          </div>
+
+          <div className="space-y-4">
+            <h1 className="max-w-4xl text-balance text-5xl font-semibold tracking-normal sm:text-6xl lg:text-7xl">
+              FitTrack Analytics
+            </h1>
+            <p className="max-w-2xl text-lg leading-8 text-zinc-300">
+              A focused command center for workouts, nutrition and progress, tuned for getting into the next session fast.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-400 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300"
+            >
+              Open dashboard
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center rounded-md border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+            >
+              Login
+            </Link>
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center rounded-md border border-white/15 px-5 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
+            >
+              Register
+            </Link>
+          </div>
+
+          <div className="grid max-w-2xl gap-3 sm:grid-cols-3">
+            {[
+              { icon: LineChart, label: 'Trend view', value: '7-day signal' },
+              { icon: Dumbbell, label: 'Training', value: 'Demo data ready' },
+              { icon: ShieldCheck, label: 'Access', value: 'No account needed' },
+            ].map((item) => (
+              <div key={item.label} className="rounded-lg border border-white/10 bg-white/[0.06] p-4">
+                <item.icon className="mb-4 h-5 w-5 text-emerald-300" />
+                <p className="text-sm font-semibold">{item.label}</p>
+                <p className="text-xs text-zinc-400">{item.value}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        <h1 className="text-4xl font-bold">FitTrack Analytics</h1>
-        <p className="mx-auto max-w-xl text-muted-foreground">
-          Track your fitness journey with detailed analytics and personalized workout insights.
-        </p>
-
-        <div className="flex flex-col justify-center gap-3 sm:flex-row">
-          <Link
-            href="/dashboard"
-            className="rounded-md bg-primary px-6 py-3 text-primary-foreground font-medium shadow-sm transition hover:bg-primary/90"
-          >
-            Open Dashboard
-          </Link>
-          <Link
-            href="/login"
-            className="rounded-md border border-primary/30 bg-primary/5 px-6 py-3 font-medium text-primary transition hover:bg-primary/10"
-          >
-            Login
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-md border border-border bg-background px-6 py-3 font-medium transition hover:bg-accent"
-          >
-            Register
-          </Link>
+        <div className="relative hidden lg:block">
+          <div className="rounded-lg border border-white/10 bg-white/[0.07] p-5 shadow-2xl">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase text-zinc-400">Today&apos;s readiness</p>
+                <p className="text-3xl font-semibold">82%</p>
+              </div>
+              <div className="rounded-md bg-emerald-400 px-3 py-1 text-xs font-semibold text-zinc-950">Active</div>
+            </div>
+            <div className="space-y-3">
+              {[
+                ['Strength', '50 min', 'w-[78%]', 'bg-emerald-400'],
+                ['Nutrition', '762 kcal', 'w-[54%]', 'bg-amber-300'],
+                ['Recovery', '3 checks', 'w-[64%]', 'bg-cyan-300'],
+              ].map(([label, value, width, color]) => (
+                <div key={label} className="rounded-md bg-zinc-950/60 p-3">
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span>{label}</span>
+                    <span className="text-zinc-400">{value}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-white/10">
+                    <div className={`h-2 rounded-full ${color} ${width}`} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-
-        <p className="mx-auto max-w-lg text-sm text-muted-foreground">
-          Visitors can open a shared dashboard instantly with workouts, nutrition, progress, and planner data already in place.
-        </p>
-      </div>
+      </section>
     </main>
   )
 }

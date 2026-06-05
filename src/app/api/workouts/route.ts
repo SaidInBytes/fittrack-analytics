@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { getWorkoutsByUser, createWorkout } from '@/backend/services/workoutService'
 import { validateWorkout } from '@/backend/validators'
+import { fallbackWorkouts, isDatabaseConnectionError } from '@/backend/services/fallbackData'
 
 // Returns workout history for the authenticated user.
 export async function GET() {
@@ -12,6 +13,10 @@ export async function GET() {
     const workouts = await getWorkoutsByUser(user!.id)
     return NextResponse.json(workouts)
   } catch (error) {
+    console.error('Workouts GET error:', error)
+    if (isDatabaseConnectionError(error)) {
+      return NextResponse.json(fallbackWorkouts)
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -31,6 +36,7 @@ export async function POST(req: NextRequest) {
     const workout = await createWorkout(user!.id, body)
     return NextResponse.json(workout, { status: 201 })
   } catch (error) {
+    console.error('Workouts POST error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

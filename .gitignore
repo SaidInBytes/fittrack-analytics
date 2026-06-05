@@ -26,6 +26,10 @@ yarn-error.log*
 .env
 .env*.local
 
+# local Codex workspace files
+.codex/
+skills/
+
 # vercel
 .vercel
 

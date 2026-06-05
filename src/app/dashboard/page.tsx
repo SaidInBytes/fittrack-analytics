@@ -12,7 +12,7 @@ import {
   YAxis,
 } from 'recharts'
 import Link from 'next/link'
-import { Activity, Apple, CalendarRange, Clock3, Weight } from 'lucide-react'
+import { Activity, Apple, CalendarRange, Clock3, Dumbbell, Sparkles, Weight } from 'lucide-react'
 import type { Nutrition, Progress, Workout } from '@/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 
@@ -27,20 +27,23 @@ function StatCard({
   value,
   icon,
   hint,
+  accent,
 }: {
   title: string
   value: string
   icon: React.ReactNode
   hint: string
+  accent: string
 }) {
   return (
-    <Card>
+    <Card className="relative overflow-hidden">
+      <div className={`absolute inset-x-0 top-0 h-1 ${accent}`} />
       <CardHeader className="mb-3 flex flex-row items-center justify-between p-0">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        {icon}
+        <CardTitle className="text-xs font-semibold uppercase text-muted-foreground">{title}</CardTitle>
+        <div className="rounded-md bg-secondary p-2 text-secondary-foreground">{icon}</div>
       </CardHeader>
       <CardContent className="p-0">
-        <p className="text-2xl font-bold">{value}</p>
+        <p className="text-3xl font-semibold">{value}</p>
         <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
       </CardContent>
     </Card>
@@ -124,31 +127,74 @@ export default function DashboardPage() {
   }, [data.workouts])
 
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">Loading dashboard...</p>
+    return (
+      <div className="grid min-h-[60vh] place-items-center">
+        <div className="rounded-lg border border-border bg-card px-5 py-4 text-sm text-muted-foreground shadow-sm">
+          Loading dashboard...
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your recent fitness activity.</p>
-      </div>
-
-      {/* Plan workout CTA */}
-      <Link href="/dashboard/plan" className="block">
-        <div className="flex items-center justify-between rounded-xl border-2 border-primary/40 bg-primary/5 px-6 py-4 transition-colors hover:bg-primary/10">
-          <div className="flex items-center gap-4">
-            <CalendarRange className="h-8 w-8 text-primary" />
-            <div>
-              <p className="font-semibold text-primary">Plan today&apos;s workout</p>
-              <p className="text-sm text-muted-foreground">
-                Choose Push, Pull, Leg Day, Cardio or Stretch — then pick your duration.
+    <div className="mx-auto max-w-7xl space-y-6">
+      <section className="relative overflow-hidden rounded-lg bg-zinc-950 px-5 py-6 text-white shadow-[0_24px_80px_-46px_black] sm:px-7 lg:px-8">
+        <div className="surface-grid absolute inset-0 opacity-[0.08]" />
+        <div className="absolute right-0 top-0 h-40 w-40 bg-emerald-400/20 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-32 w-32 bg-cyan-400/15 blur-3xl" />
+        <div className="relative grid gap-6 lg:grid-cols-[1fr_320px] lg:items-end">
+          <div className="space-y-5">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-emerald-100">
+              <Sparkles className="h-3.5 w-3.5" />
+              Demo workspace online
+            </div>
+            <div className="space-y-2">
+              <h1 className="max-w-3xl text-balance text-4xl font-semibold tracking-normal sm:text-5xl">
+                Your training signal, cleaned up.
+              </h1>
+              <p className="max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">
+                Workouts, nutrition and progress are pulled into one focused view so the next session is obvious.
               </p>
             </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/dashboard/plan"
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300"
+              >
+                <CalendarRange className="h-4 w-4" />
+                Plan today&apos;s workout
+              </Link>
+              <Link
+                href="/dashboard/workouts"
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
+              >
+                <Dumbbell className="h-4 w-4" />
+                Log workout
+              </Link>
+            </div>
           </div>
-          <Activity className="h-5 w-5 text-primary" />
+
+          <div className="rounded-lg border border-white/10 bg-white/[0.07] p-4">
+            <p className="text-xs font-semibold uppercase text-zinc-400">Current load</p>
+            <p className="mt-2 text-4xl font-semibold">{totalWorkoutMinutes}</p>
+            <p className="text-sm text-zinc-300">minutes tracked across {data.workouts.length} sessions</p>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+              <div className="rounded-md bg-white/10 p-2">
+                <p className="font-semibold text-white">{avgCalories}</p>
+                <p className="text-zinc-400">avg kcal</p>
+              </div>
+              <div className="rounded-md bg-white/10 p-2">
+                <p className="font-semibold text-white">{latestWeight ? `${latestWeight}` : '--'}</p>
+                <p className="text-zinc-400">kg</p>
+              </div>
+              <div className="rounded-md bg-white/10 p-2">
+                <p className="font-semibold text-white">{data.progress.length}</p>
+                <p className="text-zinc-400">checks</p>
+              </div>
+            </div>
+          </div>
         </div>
-      </Link>
+      </section>
 
       {error && (
         <Card className="border-destructive/30 bg-destructive/10">
@@ -160,43 +206,48 @@ export default function DashboardPage() {
         <StatCard
           title="Total Workouts"
           value={String(data.workouts.length)}
-          icon={<Activity className="h-4 w-4 text-muted-foreground" />}
+          icon={<Activity className="h-4 w-4" />}
           hint="All logged sessions"
+          accent="bg-emerald-400"
         />
         <StatCard
           title="Workout Minutes"
           value={String(totalWorkoutMinutes)}
-          icon={<Clock3 className="h-4 w-4 text-muted-foreground" />}
+          icon={<Clock3 className="h-4 w-4" />}
           hint="Accumulated duration"
+          accent="bg-cyan-400"
         />
         <StatCard
           title="Avg Calories"
           value={String(avgCalories)}
-          icon={<Apple className="h-4 w-4 text-muted-foreground" />}
+          icon={<Apple className="h-4 w-4" />}
           hint="Per nutrition log"
+          accent="bg-amber-400"
         />
         <StatCard
           title="Latest Weight"
           value={latestWeight ? `${latestWeight} kg` : '--'}
-          icon={<Weight className="h-4 w-4 text-muted-foreground" />}
+          icon={<Weight className="h-4 w-4" />}
           hint="Most recent check-in"
+          accent="bg-zinc-900"
         />
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>Workout Minutes (Last 7)</CardTitle>
+            <CardTitle>Workout Minutes</CardTitle>
+            <p className="text-sm text-muted-foreground">Last 7 logged sessions</p>
           </CardHeader>
           <CardContent className="h-72">
             {workoutTrend.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={workoutTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="day" />
                   <YAxis />
                   <Tooltip />
-                  <Line type="monotone" dataKey="minutes" stroke="hsl(var(--primary))" strokeWidth={2} />
+                  <Line type="monotone" dataKey="minutes" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -208,10 +259,11 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Recent Workouts</CardTitle>
+            <p className="text-sm text-muted-foreground">Most recent logged sessions</p>
           </CardHeader>
           <CardContent className="space-y-3">
             {data.workouts.slice(0, 5).map((workout) => (
-              <div key={workout._id} className="rounded-md border border-border p-3">
+              <div key={workout._id} className="rounded-md border border-border bg-background/70 p-3">
                 <p className="font-medium">{workout.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {workout.type} • {workout.duration} min • {format(new Date(workout.date), 'MMM d')}

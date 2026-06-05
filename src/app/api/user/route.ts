@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { getUserSettings, updateUserSettings } from '@/backend/services/userService'
+import { fallbackUser, isDatabaseConnectionError } from '@/backend/services/fallbackData'
 
 // Type guard used to validate numeric profile fields from request payloads.
 function isPositiveNumber(value: unknown): value is number {
@@ -20,7 +21,10 @@ export async function GET() {
     }
 
     return NextResponse.json(userSettings)
-  } catch {
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      return NextResponse.json(fallbackUser)
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

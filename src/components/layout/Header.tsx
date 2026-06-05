@@ -10,10 +10,10 @@ interface HeaderProps {
 
 export default function Header({ mobileMenuOpen, onToggleMobileMenu }: HeaderProps) {
   return (
-    <header className="flex items-center justify-between border-b border-border px-6 py-4">
+    <header className="flex items-center justify-between border-b border-border/70 bg-background/85 px-4 py-3 backdrop-blur sm:px-6">
       <div className="flex items-center gap-3">
         <button
-          className="rounded-md p-2 transition-colors hover:bg-accent md:hidden"
+          className="rounded-md p-2 transition-colors hover:bg-secondary md:hidden"
           aria-label="Toggle menu"
           onClick={onToggleMobileMenu}
         >
@@ -21,17 +21,21 @@ export default function Header({ mobileMenuOpen, onToggleMobileMenu }: HeaderPro
         </button>
         <div className="flex items-center gap-2">
           <Image
-            src="/logo.png"
+            src="/logo.svg"
             alt="FitTrack Analytics logo"
             width={24}
             height={24}
+            unoptimized
             className="h-6 w-6 rounded-md"
           />
           <span className="text-sm font-semibold text-foreground">FitTrack Analytics</span>
         </div>
       </div>
-      <div className="flex items-center gap-4">
-        <span className="text-sm text-muted-foreground">Welcome back</span>
+      <div className="flex items-center gap-3">
+        <span className="hidden rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground sm:inline-flex">
+          Demo workspace
+        </span>
+        <span className="text-sm font-medium text-foreground">Welcome back</span>
       </div>
     </header>
   )

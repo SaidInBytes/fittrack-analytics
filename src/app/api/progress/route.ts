@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { getProgressByUser, createProgress } from '@/backend/services/progressService'
 import { validateProgress } from '@/backend/validators'
+import { fallbackProgress, isDatabaseConnectionError } from '@/backend/services/fallbackData'
 
 // Returns progress history for the authenticated user.
 export async function GET() {
@@ -12,6 +13,10 @@ export async function GET() {
     const progress = await getProgressByUser(user!.id)
     return NextResponse.json(progress)
   } catch (error) {
+    console.error('Progress GET error:', error)
+    if (isDatabaseConnectionError(error)) {
+      return NextResponse.json(fallbackProgress)
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -31,6 +36,7 @@ export async function POST(req: NextRequest) {
     const progress = await createProgress(user!.id, body)
     return NextResponse.json(progress, { status: 201 })
   } catch (error) {
+    console.error('Progress POST error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

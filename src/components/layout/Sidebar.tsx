@@ -26,33 +26,37 @@ export default function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps
   return (
     <aside
       className={cn(
-        'fixed inset-y-0 left-0 z-40 w-64 flex-col border-r border-border bg-card transition-transform md:static md:z-auto md:flex md:translate-x-0',
+        'fixed inset-y-0 left-0 z-40 w-64 flex-col border-r border-white/10 bg-zinc-950 text-zinc-100 shadow-2xl transition-transform md:static md:z-auto md:flex md:translate-x-0',
         mobileOpen ? 'flex translate-x-0' : 'hidden -translate-x-full'
       )}
     >
-      <div className="p-6">
+      <div className="border-b border-white/10 p-5">
         <Link href="/dashboard" className="flex items-center gap-3">
           <Image
-            src="/logo.png"
+            src="/logo.svg"
             alt="FitTrack Analytics logo"
             width={32}
             height={32}
+            unoptimized
             className="h-8 w-8 rounded-md"
             priority
           />
-          <h2 className="text-xl font-bold text-primary">FitTrack Analytics</h2>
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">FitTrack</h2>
+            <p className="text-xs text-emerald-300">Analytics lab</p>
+          </div>
         </Link>
       </div>
-      <nav className="flex-1 space-y-1 px-3">
+      <nav className="flex-1 space-y-1 px-3 py-5">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
               pathname === item.href
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                ? 'bg-emerald-400 text-zinc-950'
+                : 'text-zinc-400 hover:bg-white/10 hover:text-zinc-50'
             )}
             onClick={onNavigate}
           >

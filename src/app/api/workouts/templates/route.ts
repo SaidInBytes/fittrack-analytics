@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/backend/middleware/auth'
 import { createWorkoutTemplate, getWorkoutTemplatesByUser } from '@/backend/services/workoutService'
 import { validateWorkoutTemplate } from '@/backend/validators'
+import { fallbackWorkoutTemplates, isDatabaseConnectionError } from '@/backend/services/fallbackData'
 
 // Returns saved recurring workout templates for the authenticated user.
 export async function GET() {
@@ -12,6 +13,9 @@ export async function GET() {
     const templates = await getWorkoutTemplatesByUser(user!.id)
     return NextResponse.json(templates)
   } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      return NextResponse.json(fallbackWorkoutTemplates)
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
